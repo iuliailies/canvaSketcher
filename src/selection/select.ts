@@ -1,4 +1,5 @@
 import { Selection } from "./selection";
+import { SketcherHTMLElement } from "../models/sketcher-html-element";
 
 export function select(selector: string, parentNode?: HTMLElement): Selection {
   const element = parentNode
@@ -8,7 +9,7 @@ export function select(selector: string, parentNode?: HTMLElement): Selection {
     return new Selection();
   }
   const selection = new Selection(
-    [[element as HTMLElement]],
+    [[element as SketcherHTMLElement]],
     parentNode ? [parentNode] : [document.documentElement]
   );
   return selection;
@@ -26,7 +27,7 @@ export function selectAll(
     return new Selection();
   }
   const selection = new Selection(
-    [elements as HTMLElement[]],
+    [elements as SketcherHTMLElement[]],
     parentNode ? [parentNode] : [document.documentElement]
   );
   return selection;

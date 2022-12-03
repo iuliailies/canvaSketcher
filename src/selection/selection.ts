@@ -1,12 +1,13 @@
 import { select, selectAll } from "./select";
+import { SketcherHTMLElement } from "../models/sketcher-html-element";
 
 export class Selection {
   constructor(
-    private elements: HTMLElement[][] = [],
+    private elements: SketcherHTMLElement[][] = [],
     private parentElements: HTMLElement[] = []
   ) {}
 
-  select(selector: string): Selection {
+  public select(selector: string): Selection {
     let resultSelection = new Selection();
     this.elements.map((innerArray) =>
       innerArray.map((elem) => {
@@ -17,7 +18,7 @@ export class Selection {
     return resultSelection;
   }
 
-  selectAll(selector: string): Selection {
+  public selectAll(selector: string): Selection {
     let resultSelection = new Selection();
     this.elements.map((innerArray) =>
       innerArray.map((elem) => {
