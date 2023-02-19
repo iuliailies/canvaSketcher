@@ -31,7 +31,10 @@ export class Selection {
     return resultSelection;
   }
 
-  public style(name: string, value: string | Function): Selection {
+  public style(
+    name: string,
+    value: string | ((this: SketcherHTMLElement, data: any, i: number) => any)
+  ): Selection {
     let pointer = 0;
     this.elements.forEach((nestedElements) => {
       nestedElements.forEach((elem) => {
@@ -43,8 +46,15 @@ export class Selection {
           ": " +
           (typeof value === "string"
             ? (value as string)
-            : (value as Function)(elem.data, pointer)) +
+            : (
+                value as (
+                  this: SketcherHTMLElement,
+                  data: any,
+                  i: number
+                ) => any
+              ).apply(elem, [elem.data, pointer])) +
           ";";
+
         (elem as HTMLElement).setAttribute("style", style);
         pointer += 1;
       });
@@ -52,14 +62,23 @@ export class Selection {
     return this;
   }
 
-  public attribute(name: string, value: string | Function): Selection {
+  public attribute(
+    name: string,
+    value: string | ((this: SketcherHTMLElement, data: any, i: number) => any)
+  ): Selection {
     let pointer = 0;
     this.elements.forEach((nestedElements) => {
       nestedElements.forEach((elem) => {
         const attr =
           typeof value === "string"
             ? (value as string)
-            : (value as Function)(elem.data, pointer);
+            : (
+                value as (
+                  this: SketcherHTMLElement,
+                  data: any,
+                  i: number
+                ) => any
+              ).apply(elem, [elem.data, pointer]);
         (elem as HTMLElement).setAttribute(name, attr);
         pointer += 1;
       });
