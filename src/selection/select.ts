@@ -1,7 +1,13 @@
 import { Selection } from "./selection";
 import { SketcherHTMLElement } from "../models/sketcher-html-element";
 
-export function select(selector: string, parentNode?: HTMLElement): Selection {
+export function select(
+  selector: string | SketcherHTMLElement,
+  parentNode?: HTMLElement
+): Selection {
+  if (typeof selector === "object") {
+    return new Selection([[selector]], [document.documentElement]);
+  }
   const element = parentNode
     ? parentNode.querySelector(selector)
     : document.querySelector(selector);
