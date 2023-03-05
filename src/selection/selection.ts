@@ -1,5 +1,6 @@
 import { select, selectAll } from "./select";
 import { SketcherHTMLElement } from "../models/sketcher-html-element";
+import { contextListener, EventTypes } from "./helpers";
 
 export class Selection {
   constructor(
@@ -81,6 +82,20 @@ export class Selection {
               ).apply(elem, [elem.data, pointer]);
         (elem as HTMLElement).setAttribute(name, attr);
         pointer += 1;
+      });
+    });
+    return this;
+  }
+
+  public on(
+    eventType: EventTypes,
+    action: (this: SketcherHTMLElement, eventObj: Event, data: any) => any
+  ): Selection {
+    this.elements.forEach((nestedElements) => {
+      nestedElements.forEach((elem) => {
+        const listener = contextListener.apply(elem, [action]);
+        elem.removeEventListener(eventType, listener);
+        elem.addEventListener(eventType, listener);
       });
     });
     return this;
