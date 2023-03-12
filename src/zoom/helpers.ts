@@ -1,6 +1,12 @@
-export function resetTransformStyle(element: HTMLElement): void {
+export function resetTransformStyle(
+  element: HTMLElement,
+  delay?: number
+): void {
   element.style.transform = "";
-  element.classList.remove("zoomed");
+  setTimeout(() => {
+    element.classList.remove("zoomed");
+    element.style.removeProperty("z-index");
+  }, (delay || 0) * 1000);
 }
 
 export interface Shortcut {
@@ -20,4 +26,25 @@ export function isShortcutPressed(
     (shortcut.shift ? e.shiftKey : true) &&
     (shortcut.alt ? e.altKey : true);
   return res;
+}
+
+export interface ZoomInOptions {
+  transitionDelay?: number;
+  transitionDuration?: number;
+  transitionCurve?: "linear" | "ease" | "ease-in" | "ease-out" | "ease-in-out";
+  boundary?: string;
+}
+
+export function getBoundary(value?: string) {
+  let boundary = 0;
+  if (!value) return boundary;
+  if (value.endsWith("%")) {
+    const subvalue = value.slice(0, -1);
+    const numeric = +subvalue;
+    if (numeric) boundary = (window.innerHeight * numeric) / 100;
+  } else {
+    const numeric = +value;
+    if (numeric) boundary = numeric;
+  }
+  return boundary;
 }

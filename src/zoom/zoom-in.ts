@@ -1,5 +1,10 @@
 import { SketcherHTMLElement } from "../models/sketcher-html-element";
-import { isShortcutPressed, resetTransformStyle } from "./helpers";
+import {
+  getBoundary,
+  isShortcutPressed,
+  resetTransformStyle,
+  ZoomInOptions,
+} from "./helpers";
 
 export enum ZoomInMode {
   Spotlight = "SPOTLIGHT",
@@ -9,7 +14,7 @@ export enum ZoomInMode {
 
 const modeFunctionAssosiation = new Map<
   ZoomInMode,
-  (element: SketcherHTMLElement) => any
+  (element: SketcherHTMLElement, options: ZoomInOptions) => any
 >([
   [ZoomInMode.Spotlight, handleSpotlight],
   [ZoomInMode.Infiltrate, handleInfiltrare],
@@ -19,6 +24,7 @@ const modeFunctionAssosiation = new Map<
 export function zoomIn(
   element: SketcherHTMLElement,
   mode: ZoomInMode = ZoomInMode.Spotlight,
+  options: ZoomInOptions = {},
   exitable?: HTMLElement,
   exitShortcut?: { key: string; ctrl?: boolean; shift?: boolean; alt?: boolean }
 ): void {
@@ -27,35 +33,52 @@ export function zoomIn(
     return;
   }
   element.classList.add("zoomed");
-  modeFunctionAssosiation.get(mode)!(element);
+  element.style.zIndex = "10000";
+  modeFunctionAssosiation.get(mode)!(element, options);
   if (exitable) {
     exitable.addEventListener("click", function () {
-      resetTransformStyle(element);
+      resetTransformStyle(element, options.transitionDuration);
     });
   }
   if (exitShortcut) {
     document.addEventListener("keydown", (e) => {
       if (isShortcutPressed(e, exitShortcut)) {
-        resetTransformStyle(element);
+        resetTransformStyle(element, options.transitionDuration);
       }
     });
   }
 }
 
-function handleSpotlight(element: SketcherHTMLElement): void {}
+function handleSpotlight(
+  element: SketcherHTMLElement,
+  options: ZoomInOptions
+): void {}
 
-function handleInfiltrare(element: SketcherHTMLElement): void {}
+function handleInfiltrare(
+  element: SketcherHTMLElement,
+  options: ZoomInOptions
+): void {}
 
-function handlePopUp(element: SketcherHTMLElement): void {
+function handlePopUp(
+  element: SketcherHTMLElement,
+  options: ZoomInOptions
+): void {
   const elementBoundingRect = element.getBoundingClientRect();
   const xTranslation =
     window.innerWidth / 2 -
     (elementBoundingRect.left + elementBoundingRect.width / 2);
   const yTranslation =
-    window.innerWidth / 2 -
-    (elementBoundingRect.left + elementBoundingRect.width / 2);
-  const scaleWidth = window.innerWidth / elementBoundingRect.width;
-  const scaleHeight = window.innerHeight / elementBoundingRect.height;
+    window.innerHeight / 2 -
+    (elementBoundingRect.top + elementBoundingRect.height / 2);
+  const boundary = getBoundary(options.boundary);
+  const scaleWidth = (window.innerWidth - boundary) / elementBoundingRect.width;
+  const scaleHeight =
+    (window.innerHeight - boundary) / elementBoundingRect.height;
   const scale = scaleWidth < scaleHeight ? scaleWidth : scaleHeight;
   element.style.transform = `translate(${xTranslation}px, ${yTranslation}px) scale(${scale}) `;
+  element.style.transitionDelay = options.transitionDelay + "s" || "0s";
+  element.style.transitionDuration = options.transitionDuration + "s" || "0s";
+  if (options.transitionCurve) {
+    element.style.transitionTimingFunction = options.transitionCurve;
+  }
 }
