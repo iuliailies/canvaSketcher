@@ -1,3 +1,5 @@
+import { BoundingRect, ElementBoundingRect } from "./zoom-in";
+
 export function resetTransformStyle(
   element: HTMLElement,
   delay?: number
@@ -47,4 +49,21 @@ export function getBoundary(value?: string) {
     if (numeric) boundary = numeric;
   }
   return boundary;
+}
+
+export function updateElementBoundingRect(
+  rect: ElementBoundingRect
+): BoundingRect {
+  const currentScroll = {
+    x: document.documentElement.scrollLeft,
+    y: document.documentElement.scrollTop,
+  };
+  const updatedRect: BoundingRect = {
+    left: rect.rect.left - currentScroll.x + rect.scroll.x,
+    top: rect.rect.top - currentScroll.y + rect.scroll.y,
+    width: rect.rect.width,
+    height: rect.rect.height,
+  };
+
+  return updatedRect;
 }
