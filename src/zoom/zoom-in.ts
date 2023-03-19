@@ -6,6 +6,7 @@ import {
   updateElementBoundingRect,
   ZoomInOptions,
 } from "./helpers";
+import { Zoomable } from "./zoomable";
 
 export enum ZoomInMode {
   Spotlight = "SPOTLIGHT",
@@ -45,11 +46,13 @@ export function zoomIn(
   options: ZoomInOptions = {},
   exitable?: HTMLElement,
   exitShortcut?: { key: string; ctrl?: boolean; shift?: boolean; alt?: boolean }
-): void {
+): Zoomable {
+  let zoomable = new Zoomable(element);
   // avoid zooming an element twice
   if (element.classList.contains("zoomed")) {
-    return;
+    return zoomable;
   }
+
   element.classList.add("zoomed");
   element.style.zIndex = "10000";
   const elementBoundingRect: ElementBoundingRect = {
@@ -61,6 +64,7 @@ export function zoomIn(
     zoom: 1,
   };
   modeFunctionAssosiation.get(mode)!(element, options, elementBoundingRect);
+  handleCallbacks(zoomable, options, "open");
   let scrollEndTimer: any;
   let functionBinding = handleScrollEnd.bind(
     handleScrollEnd,
@@ -75,6 +79,7 @@ export function zoomIn(
     exitable.addEventListener("click", function () {
       resetTransformStyle(element, options.transitionDuration);
       document.removeEventListener("scroll", functionBinding);
+      handleCallbacks(zoomable, options, "close");
     });
   }
   if (exitShortcut) {
@@ -82,9 +87,11 @@ export function zoomIn(
       if (isShortcutPressed(e, exitShortcut)) {
         resetTransformStyle(element, options.transitionDuration);
         document.removeEventListener("scroll", functionBinding);
+        handleCallbacks(zoomable, options, "close");
       }
     });
   }
+  return zoomable;
 }
 
 function handleScrollEnd(
@@ -99,6 +106,29 @@ function handleScrollEnd(
   timer = setTimeout(() => {
     modeFunctionAssosiation.get(mode)!(element, options, rect);
   }, 50);
+}
+
+function handleCallbacks(
+  zoomable: Zoomable,
+  options: ZoomInOptions,
+  state: "open" | "close"
+): void {
+  setTimeout(() => {
+    const startAction = zoomable.functionBindings.get(
+      state === "open" ? "AnimationOpenStart" : "AnimationCloseStart"
+    );
+    if (startAction) {
+      startAction.apply(zoomable, [zoomable]);
+    }
+    setTimeout(() => {
+      const endAction = zoomable.functionBindings.get(
+        state === "open" ? "AnimationOpenEnd" : "AnimationCloseEnd"
+      );
+      if (endAction) {
+        endAction.apply(zoomable, [zoomable]);
+      }
+    }, (options.transitionDuration || 0) * 1000);
+  }, (options.transitionDelay || 0) * 1000);
 }
 
 function handleSpotlight(
@@ -132,6 +162,7 @@ function handlePopUp(
     (window.innerHeight - boundary) / elementBoundingRect.height;
   const scale = scaleWidth < scaleHeight ? scaleWidth : scaleHeight;
   element.style.transform = `translate(${xTranslation}px, ${yTranslation}px) scale(${scale}) `;
+  element.style.transitionProperty = `transform`;
   element.style.transitionDelay = options.transitionDelay + "s" || "0s";
   element.style.transitionDuration = options.transitionDuration + "s" || "0s";
   if (options.transitionCurve) {
