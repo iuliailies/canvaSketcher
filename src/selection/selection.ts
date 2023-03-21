@@ -32,6 +32,40 @@ export class Selection {
     return resultSelection;
   }
 
+  public append(selector: string): Selection {
+    let resultSelection = new Selection();
+    this.elements.map((innerArray) =>
+      innerArray.map((elem) => {
+        resultSelection.parentElements.push(elem);
+        const child = elem.appendChild(document.createElement(selector));
+        resultSelection.elements.push([child]);
+      })
+    );
+    return resultSelection;
+  }
+
+  public text(
+    value: string | ((this: SketcherHTMLElement, data: any, i: number) => any)
+  ): Selection {
+    let pointer = 0;
+    this.elements.map((innerArray) =>
+      innerArray.map((elem) => {
+        elem.textContent =
+          typeof value === "string"
+            ? (value as string)
+            : (
+                value as (
+                  this: SketcherHTMLElement,
+                  data: any,
+                  i: number
+                ) => any
+              ).apply(elem, [elem.data, pointer]);
+        pointer += 1;
+      })
+    );
+    return this;
+  }
+
   public style(
     name: string,
     value: string | ((this: SketcherHTMLElement, data: any, i: number) => any)
