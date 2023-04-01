@@ -16,9 +16,10 @@ export interface DragOptions {
 interface DragInstance {
   mouseStartPosition: Point;
   elementStartPosition: Point;
-  // keeping an instance of the mouse move function binding, because we only want to bind this mouse event to the
-  // element between a mouse down and a mouse up
-  moveFunctionBinding?: (this: Document, ev: MouseEvent) => void;
+  // keeping instances of the mousemove and mouseup function binding, because we only want to listen to these
+  // mouse events after a mouse down and until a mouse up
+  moveFunctionBinding?: (ev: MouseEvent) => void;
+  upFunctionBinding?: (ev: MouseEvent) => void;
 }
 
 export type DragState = "start" | "drag" | "end";
@@ -44,14 +45,13 @@ export class DragEnvironment {
             y: 0,
           },
         };
-        let downFunctionBinding = handleMouseDown.bind(
+        let downFunctionBinding = this.handleMouseDown.bind(
+          this,
           elem,
           dragInstance,
           options || {}
         );
-        let upFunctionBinding = handleMouseUp.bind(document, dragInstance);
         elem.addEventListener("mousedown", downFunctionBinding);
-        document.addEventListener("mouseup", upFunctionBinding);
       });
     });
     return this;
@@ -64,64 +64,69 @@ export class DragEnvironment {
     this.outsideFunctionBindings.set(state, action);
     return this;
   }
-}
 
-function handleMouseDown(
-  this: SketcherHTMLElement,
-  dragInstance: DragInstance,
-  options: DragOptions,
-  ev: MouseEvent
-): void {
-  dragInstance.mouseStartPosition = {
-    x: +ev.x,
-    y: +ev.y,
-  };
+  public handleMouseDown(
+    elem: SketcherHTMLElement,
+    dragInstance: DragInstance,
+    options: DragOptions,
+    ev: MouseEvent
+  ): void {
+    dragInstance.mouseStartPosition = {
+      x: +ev.x,
+      y: +ev.y,
+    };
 
-  dragInstance.elementStartPosition = {
-    x: parseInt(this.style.left, 10) || 0,
-    y: parseInt(this.style.top, 10) || 0,
-  };
+    dragInstance.elementStartPosition = {
+      x: parseInt(elem.style.left, 10) || 0,
+      y: parseInt(elem.style.top, 10) || 0,
+    };
 
-  let moveFunctionBinding = handleMouseMove.bind(
-    document,
-    this,
-    dragInstance.mouseStartPosition,
-    dragInstance.elementStartPosition,
-    options
-  );
-  dragInstance.moveFunctionBinding = moveFunctionBinding;
+    let moveFunctionBinding = this.handleMouseMove.bind(
+      this,
+      elem,
+      dragInstance.mouseStartPosition,
+      dragInstance.elementStartPosition,
+      options
+    );
+    dragInstance.moveFunctionBinding = moveFunctionBinding;
 
-  document.addEventListener("mousemove", moveFunctionBinding);
-}
+    let upFunctionBinding = this.handleMouseUp.bind(this, dragInstance);
+    dragInstance.upFunctionBinding = upFunctionBinding;
 
-function handleMouseMove(
-  this: Document,
-  elem: SketcherHTMLElement,
-  mouseStartPosition: Point,
-  elementStartPosition: Point,
-  options: DragOptions,
-  ev: MouseEvent
-): void {
-  select(elem).style(
-    "left",
-    elementStartPosition.x +
-      (ev.x - mouseStartPosition.x) / (options?.scale || 1) +
-      "px"
-  );
-  select(elem).style(
-    "top",
-    elementStartPosition.y +
-      (ev.y - mouseStartPosition.y) / (options?.scale || 1) +
-      "px"
-  );
-  // disable unwanted background selection caused by mouse movement
-  document.getSelection()?.removeAllRanges();
-}
-
-function handleMouseUp(this: Document, dragInstance: DragInstance): void {
-  if (!dragInstance.moveFunctionBinding) {
-    return;
+    document.addEventListener("mousemove", moveFunctionBinding);
+    document.addEventListener("mouseup", upFunctionBinding);
   }
-  document.removeEventListener("mousemove", dragInstance.moveFunctionBinding);
-  dragInstance.moveFunctionBinding = undefined;
+
+  public handleMouseMove(
+    elem: SketcherHTMLElement,
+    mouseStartPosition: Point,
+    elementStartPosition: Point,
+    options: DragOptions,
+    ev: MouseEvent
+  ): void {
+    select(elem).style(
+      "left",
+      elementStartPosition.x +
+        (ev.x - mouseStartPosition.x) / (options?.scale || 1) +
+        "px"
+    );
+    select(elem).style(
+      "top",
+      elementStartPosition.y +
+        (ev.y - mouseStartPosition.y) / (options?.scale || 1) +
+        "px"
+    );
+    // disable unwanted background selection caused by mouse movement
+    document.getSelection()?.removeAllRanges();
+  }
+
+  public handleMouseUp(dragInstance: DragInstance): void {
+    if (!dragInstance.moveFunctionBinding || !dragInstance.upFunctionBinding) {
+      return;
+    }
+    document.removeEventListener("mousemove", dragInstance.moveFunctionBinding);
+    document.removeEventListener("mouseup", dragInstance.upFunctionBinding);
+    dragInstance.moveFunctionBinding = undefined;
+    dragInstance.upFunctionBinding = undefined;
+  }
 }
