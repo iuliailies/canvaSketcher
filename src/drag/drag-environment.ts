@@ -14,7 +14,8 @@ export interface DragOptions {
 }
 
 interface DragInstance {
-  startPosition: Point;
+  mouseStartPosition: Point;
+  elementStartPosition: Point;
   // keeping an instance of the mouse move function binding, because we only want to bind this mouse event to the
   // element between a mouse down and a mouse up
   moveFunctionBinding?: (this: Document, ev: MouseEvent) => void;
@@ -34,7 +35,11 @@ export class DragEnvironment {
     this.selection?.elements.forEach((elems) => {
       elems.forEach((elem) => {
         let dragInstance: DragInstance = {
-          startPosition: {
+          mouseStartPosition: {
+            x: 0,
+            y: 0,
+          },
+          elementStartPosition: {
             x: 0,
             y: 0,
           },
@@ -67,13 +72,21 @@ function handleMouseDown(
   options: DragOptions,
   ev: MouseEvent
 ): void {
-  dragInstance.startPosition.x = +ev.x;
-  dragInstance.startPosition.y = +ev.y;
+  dragInstance.mouseStartPosition = {
+    x: +ev.x,
+    y: +ev.y,
+  };
+
+  dragInstance.elementStartPosition = {
+    x: parseInt(this.style.left, 10) || 0,
+    y: parseInt(this.style.top, 10) || 0,
+  };
 
   let moveFunctionBinding = handleMouseMove.bind(
     document,
     this,
-    dragInstance.startPosition,
+    dragInstance.mouseStartPosition,
+    dragInstance.elementStartPosition,
     options
   );
   dragInstance.moveFunctionBinding = moveFunctionBinding;
@@ -84,17 +97,22 @@ function handleMouseDown(
 function handleMouseMove(
   this: Document,
   elem: SketcherHTMLElement,
-  startPosition: Point,
+  mouseStartPosition: Point,
+  elementStartPosition: Point,
   options: DragOptions,
   ev: MouseEvent
 ): void {
   select(elem).style(
     "left",
-    startPosition.x + (ev.x - startPosition.x) / (options?.scale || 1) + "px"
+    elementStartPosition.x +
+      (ev.x - mouseStartPosition.x) / (options?.scale || 1) +
+      "px"
   );
   select(elem).style(
     "top",
-    startPosition.y + (ev.y - startPosition.y) / (options?.scale || 1) + "px"
+    elementStartPosition.y +
+      (ev.y - mouseStartPosition.y) / (options?.scale || 1) +
+      "px"
   );
   // disable unwanted background selection caused by mouse movement
   document.getSelection()?.removeAllRanges();
