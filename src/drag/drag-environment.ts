@@ -30,10 +30,10 @@ export class DragEnvironment {
     DragState,
     (this: SketcherHTMLElement, eventObj: Event, data: any) => any
   >();
-  constructor(public selection?: Selection) {}
+  constructor() {}
 
-  public apply(options?: DragOptions): DragEnvironment {
-    this.selection?.elements.forEach((elems) => {
+  public apply(selection: Selection, options?: DragOptions): DragEnvironment {
+    selection?.elements.forEach((elems) => {
       elems.forEach((elem) => {
         let dragInstance: DragInstance = {
           mouseStartPosition: {
@@ -90,11 +90,14 @@ export class DragEnvironment {
     );
     dragInstance.moveFunctionBinding = moveFunctionBinding;
 
-    let upFunctionBinding = this.handleMouseUp.bind(this, dragInstance);
+    let upFunctionBinding = this.handleMouseUp.bind(this, elem, dragInstance);
     dragInstance.upFunctionBinding = upFunctionBinding;
 
     document.addEventListener("mousemove", moveFunctionBinding);
     document.addEventListener("mouseup", upFunctionBinding);
+
+    // call user defined function
+    this.outsideFunctionBindings.get("start")?.apply(elem, [ev, elem.data]);
   }
 
   public handleMouseMove(
@@ -118,9 +121,16 @@ export class DragEnvironment {
     );
     // disable unwanted background selection caused by mouse movement
     document.getSelection()?.removeAllRanges();
+
+    // call user defined function
+    this.outsideFunctionBindings.get("drag")?.apply(elem, [ev, elem.data]);
   }
 
-  public handleMouseUp(dragInstance: DragInstance): void {
+  public handleMouseUp(
+    elem: SketcherHTMLElement,
+    dragInstance: DragInstance,
+    ev: MouseEvent
+  ): void {
     if (!dragInstance.moveFunctionBinding || !dragInstance.upFunctionBinding) {
       return;
     }
@@ -128,5 +138,8 @@ export class DragEnvironment {
     document.removeEventListener("mouseup", dragInstance.upFunctionBinding);
     dragInstance.moveFunctionBinding = undefined;
     dragInstance.upFunctionBinding = undefined;
+
+    // call user defined function
+    this.outsideFunctionBindings.get("end")?.apply(elem, [ev, elem.data]);
   }
 }

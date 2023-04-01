@@ -148,8 +148,8 @@ export class Selection {
   }
 
   public draggable(options?: DragOptions): Selection {
-    let dragEnvironment = new DragEnvironment(this);
-    dragEnvironment.apply(options);
+    let dragEnvironment = new DragEnvironment();
+    dragEnvironment.apply(this, options);
     return this;
   }
 }
