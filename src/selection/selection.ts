@@ -1,6 +1,7 @@
 import { select, selectAll } from "./select";
 import { SketcherHTMLElement } from "../models/sketcher-html-element";
 import { contextListener, EventTypes } from "./helpers";
+import { DragEnvironment, DragOptions } from "../drag/drag-environment";
 
 export class Selection {
   constructor(
@@ -143,6 +144,12 @@ export class Selection {
         elem.addEventListener(eventType, listener);
       });
     });
+    return this;
+  }
+
+  public draggable(options?: DragOptions): Selection {
+    let dragEnvironment = new DragEnvironment(this);
+    dragEnvironment.apply(options);
     return this;
   }
 }
