@@ -68,29 +68,35 @@ export class Selection {
 
   public style(
     name: string,
-    value: string | ((this: SketcherHTMLElement, data: any, i: number) => any)
+    value?: string | ((this: SketcherHTMLElement, data: any, i: number) => any)
   ): Selection {
     let pointer = 0;
     this.elements.forEach((nestedElements) => {
       nestedElements.forEach((elem) => {
-        const style =
-          (elem.getAttribute("style") !== null
-            ? elem.getAttribute("style")
-            : "") +
-          name +
-          ": " +
-          (typeof value === "string"
-            ? (value as string)
-            : (
-                value as (
-                  this: SketcherHTMLElement,
-                  data: any,
-                  i: number
-                ) => any
-              ).apply(elem, [elem.data, pointer])) +
-          ";";
+        elem.style.removeProperty(name);
 
-        (elem as HTMLElement).setAttribute("style", style);
+        let style =
+          elem.getAttribute("style") !== null ? elem.getAttribute("style") : "";
+
+        if (value) {
+          style +=
+            name +
+            ": " +
+            (typeof value === "string"
+              ? (value as string)
+              : (
+                  value as (
+                    this: SketcherHTMLElement,
+                    data: any,
+                    i: number
+                  ) => any
+                ).apply(elem, [elem.data, pointer])) +
+            ";";
+        }
+
+        if (style !== null) {
+          (elem as HTMLElement).setAttribute("style", style);
+        }
         pointer += 1;
       });
     });
@@ -99,22 +105,27 @@ export class Selection {
 
   public attribute(
     name: string,
-    value: string | ((this: SketcherHTMLElement, data: any, i: number) => any)
+    value?: string | ((this: SketcherHTMLElement, data: any, i: number) => any)
   ): Selection {
     let pointer = 0;
     this.elements.forEach((nestedElements) => {
       nestedElements.forEach((elem) => {
-        const attr =
-          typeof value === "string"
-            ? (value as string)
-            : (
-                value as (
-                  this: SketcherHTMLElement,
-                  data: any,
-                  i: number
-                ) => any
-              ).apply(elem, [elem.data, pointer]);
-        (elem as HTMLElement).setAttribute(name, attr);
+        if (!value) {
+          elem.removeAttribute(name);
+        } else {
+          const attr =
+            typeof value === "string"
+              ? (value as string)
+              : (
+                  value as (
+                    this: SketcherHTMLElement,
+                    data: any,
+                    i: number
+                  ) => any
+                ).apply(elem, [elem.data, pointer]);
+          (elem as HTMLElement).setAttribute(name, attr);
+        }
+
         pointer += 1;
       });
     });
