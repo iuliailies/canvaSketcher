@@ -1,6 +1,6 @@
 import { select, selectAll } from "./select";
 import { SketcherHTMLElement } from "../models/sketcher-html-element";
-import { contextListener, EventTypes } from "./helpers";
+import { contextListener } from "./helpers";
 import { DragEnvironment, DragOptions } from "../drag/drag-environment";
 
 export class Selection {
@@ -134,7 +134,7 @@ export class Selection {
   }
 
   public on(
-    eventType: EventTypes,
+    eventType: keyof HTMLElementEventMap,
     action: (this: SketcherHTMLElement, eventObj: Event, data: any) => any
   ): Selection {
     this.elements.forEach((nestedElements) => {

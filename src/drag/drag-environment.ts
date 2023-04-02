@@ -10,12 +10,14 @@ export interface Point {
 export interface DragOptions {
   container?: HTMLElement;
   scale?: number; // TODO: check passing by refference?
-  debounce?: number;
+  threshold?: number;
+  disableEvents?: boolean;
 }
 
 interface DragInstance {
   mouseStartPosition: Point;
   elementStartPosition: Point;
+  dragging: boolean;
   // keeping instances of the mousemove and mouseup function binding, because we only want to listen to these
   // mouse events after a mouse down and until a mouse up
   moveFunctionBinding?: (ev: MouseEvent) => void;
@@ -44,6 +46,7 @@ export class DragEnvironment {
             x: 0,
             y: 0,
           },
+          dragging: false,
         };
         let downFunctionBinding = this.handleMouseDown.bind(
           this,
@@ -71,6 +74,9 @@ export class DragEnvironment {
     options: DragOptions,
     ev: MouseEvent
   ): void {
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+
     dragInstance.mouseStartPosition = {
       x: +ev.x,
       y: +ev.y,
@@ -84,41 +90,69 @@ export class DragEnvironment {
     let moveFunctionBinding = this.handleMouseMove.bind(
       this,
       elem,
-      dragInstance.mouseStartPosition,
-      dragInstance.elementStartPosition,
+      dragInstance,
       options
     );
     dragInstance.moveFunctionBinding = moveFunctionBinding;
 
-    let upFunctionBinding = this.handleMouseUp.bind(this, elem, dragInstance);
+    let upFunctionBinding = this.handleMouseUp.bind(
+      this,
+      elem,
+      dragInstance,
+      options
+    );
     dragInstance.upFunctionBinding = upFunctionBinding;
 
     document.addEventListener("mousemove", moveFunctionBinding);
     document.addEventListener("mouseup", upFunctionBinding);
-
-    // call user defined function
-    this.outsideFunctionBindings.get("start")?.apply(elem, [ev, elem.data]);
   }
 
   public handleMouseMove(
     elem: SketcherHTMLElement,
-    mouseStartPosition: Point,
-    elementStartPosition: Point,
+    dragInstance: DragInstance,
     options: DragOptions,
     ev: MouseEvent
   ): void {
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+
+    // prevent drag behaviour if Manhattan distance from the initial position to the current one < threshold
+    if (options.threshold) {
+      if (
+        Math.abs(ev.x - dragInstance.mouseStartPosition.x) +
+          Math.abs(ev.y - dragInstance.mouseStartPosition.y) /
+            (options?.scale || 1) <
+        options.threshold
+      ) {
+        return;
+      }
+    }
+
+    if (!dragInstance.dragging) {
+      // start of drag behaviour
+      dragInstance.dragging = true;
+
+      // call user defined function
+      this.outsideFunctionBindings.get("start")?.apply(elem, [ev, elem.data]);
+
+      if (options.disableEvents) {
+        elem.style.pointerEvents = "none";
+      }
+    }
+
     select(elem).style(
       "left",
-      elementStartPosition.x +
-        (ev.x - mouseStartPosition.x) / (options?.scale || 1) +
+      dragInstance.elementStartPosition.x +
+        (ev.x - dragInstance.mouseStartPosition.x) / (options?.scale || 1) +
         "px"
     );
     select(elem).style(
       "top",
-      elementStartPosition.y +
-        (ev.y - mouseStartPosition.y) / (options?.scale || 1) +
+      dragInstance.elementStartPosition.y +
+        (ev.y - dragInstance.mouseStartPosition.y) / (options?.scale || 1) +
         "px"
     );
+
     // disable unwanted background selection caused by mouse movement
     document.getSelection()?.removeAllRanges();
 
@@ -129,15 +163,25 @@ export class DragEnvironment {
   public handleMouseUp(
     elem: SketcherHTMLElement,
     dragInstance: DragInstance,
+    options: DragOptions,
     ev: MouseEvent
   ): void {
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+
+    if (options.disableEvents) {
+      elem.style.pointerEvents = "auto";
+    }
+
     if (!dragInstance.moveFunctionBinding || !dragInstance.upFunctionBinding) {
       return;
     }
+
     document.removeEventListener("mousemove", dragInstance.moveFunctionBinding);
     document.removeEventListener("mouseup", dragInstance.upFunctionBinding);
     dragInstance.moveFunctionBinding = undefined;
     dragInstance.upFunctionBinding = undefined;
+    dragInstance.dragging = false;
 
     // call user defined function
     this.outsideFunctionBindings.get("end")?.apply(elem, [ev, elem.data]);
