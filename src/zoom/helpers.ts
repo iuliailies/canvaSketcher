@@ -25,8 +25,12 @@ export function isShortcutPressed(
   const res =
     e.key.toLowerCase() === shortcut.key.toLowerCase() &&
     (shortcut.ctrl ? e.ctrlKey : true) &&
+    (!shortcut.ctrl && e.ctrlKey ? false : true) &&
     (shortcut.shift ? e.shiftKey : true) &&
-    (shortcut.alt ? e.altKey : true);
+    (!shortcut.shift && e.shiftKey ? false : true) &&
+    (shortcut.alt ? e.altKey : true) &&
+    (!shortcut.alt && e.altKey ? false : true);
+
   return res;
 }
 
