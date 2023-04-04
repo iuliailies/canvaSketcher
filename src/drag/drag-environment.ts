@@ -8,7 +8,7 @@ export interface Point {
 }
 
 export interface DragOptions {
-  container?: HTMLElement;
+  container?: HTMLElement; // TODO
   scale?: number; // TODO: check passing by refference?
   threshold?: number;
   disableEvents?: boolean;
@@ -68,7 +68,7 @@ export class DragEnvironment {
     return this;
   }
 
-  public handleMouseDown(
+  private handleMouseDown(
     elem: SketcherHTMLElement,
     dragInstance: DragInstance,
     options: DragOptions,
@@ -107,7 +107,7 @@ export class DragEnvironment {
     document.addEventListener("mouseup", upFunctionBinding);
   }
 
-  public handleMouseMove(
+  private handleMouseMove(
     elem: SketcherHTMLElement,
     dragInstance: DragInstance,
     options: DragOptions,
@@ -160,7 +160,7 @@ export class DragEnvironment {
     this.outsideFunctionBindings.get("drag")?.apply(elem, [ev, elem.data]);
   }
 
-  public handleMouseUp(
+  private handleMouseUp(
     elem: SketcherHTMLElement,
     dragInstance: DragInstance,
     options: DragOptions,

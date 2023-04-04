@@ -35,9 +35,13 @@ export function isShortcutPressed(
 }
 
 export interface ZoomInOptions {
+  // time until the zoom animaiton is initiated, in seconds
   transitionDelay?: number;
+  // animaiton duration, in seconds
   transitionDuration?: number;
+  // animation curve style
   transitionCurve?: "linear" | "ease" | "ease-in" | "ease-out" | "ease-in-out";
+  // margin around the zoomed element; in percentage, relative to the window
   boundary?: string;
 }
 
