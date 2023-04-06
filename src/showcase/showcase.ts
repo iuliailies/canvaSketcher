@@ -4,13 +4,13 @@ import {
   isShortcutPressed,
   resetTransformStyle,
   updateElementBoundingRect,
-  ZoomInOptions,
+  ShowcaseOptions,
+  showcasedClass,
 } from "./helpers";
-import { Zoomable } from "./zoomable";
+import { Showcased } from "./showcased";
 
-export enum ZoomInMode {
+export enum ShowcaseMode {
   Spotlight = "SPOTLIGHT",
-  Infiltrate = "INFILTRATE",
   PopUp = "POPUP",
 }
 
@@ -28,32 +28,31 @@ export interface ElementBoundingRect {
 }
 
 const modeFunctionAssosiation = new Map<
-  ZoomInMode,
+  ShowcaseMode,
   (
     element: SketcherHTMLElement,
-    options: ZoomInOptions,
+    options: ShowcaseOptions,
     rect?: ElementBoundingRect
   ) => any
 >([
-  [ZoomInMode.Spotlight, handleSpotlight],
-  [ZoomInMode.Infiltrate, handleInfiltrare],
-  [ZoomInMode.PopUp, handlePopUp],
+  [ShowcaseMode.Spotlight, handleSpotlight],
+  [ShowcaseMode.PopUp, handlePopUp],
 ]);
 
-export function zoomIn(
+export function showcase(
   element: SketcherHTMLElement,
-  mode: ZoomInMode = ZoomInMode.Spotlight,
-  options: ZoomInOptions = {},
+  mode: ShowcaseMode = ShowcaseMode.Spotlight,
+  options: ShowcaseOptions = {},
   exitable?: HTMLElement,
   exitShortcut?: { key: string; ctrl?: boolean; shift?: boolean; alt?: boolean }
-): Zoomable {
-  let zoomable = new Zoomable(element);
-  // avoid zooming an element twice
-  if (element.classList.contains("zoomed")) {
-    return zoomable;
+): Showcased {
+  let showcased = new Showcased(element);
+  // avoid zooming an element twice on showcase
+  if (element.classList.contains(showcasedClass)) {
+    return showcased;
   }
 
-  element.classList.add("zoomed");
+  element.classList.add(showcasedClass);
   element.style.zIndex = "10000";
   const elementBoundingRect: ElementBoundingRect = {
     rect: element.getBoundingClientRect(),
@@ -64,7 +63,7 @@ export function zoomIn(
     zoom: 1,
   };
   modeFunctionAssosiation.get(mode)!(element, options, elementBoundingRect);
-  handleCallbacks(zoomable, options, "open");
+  handleCallbacks(showcased, options, "open");
   let scrollEndTimer: any;
   let functionBinding = handleScrollEnd.bind(
     handleScrollEnd,
@@ -79,7 +78,7 @@ export function zoomIn(
     exitable.addEventListener("click", function () {
       resetTransformStyle(element, options.transitionDuration);
       document.removeEventListener("scroll", functionBinding);
-      handleCallbacks(zoomable, options, "close");
+      handleCallbacks(showcased, options, "close");
     });
   }
   if (exitShortcut) {
@@ -87,17 +86,17 @@ export function zoomIn(
       if (isShortcutPressed(e, exitShortcut)) {
         resetTransformStyle(element, options.transitionDuration);
         document.removeEventListener("scroll", functionBinding);
-        handleCallbacks(zoomable, options, "close");
+        handleCallbacks(showcased, options, "close");
       }
     });
   }
-  return zoomable;
+  return showcased;
 }
 
 function handleScrollEnd(
   element: SketcherHTMLElement,
-  mode: ZoomInMode = ZoomInMode.Spotlight,
-  options: ZoomInOptions = {},
+  mode: ShowcaseMode = ShowcaseMode.Spotlight,
+  options: ShowcaseOptions = {},
   rect: ElementBoundingRect,
   timer: any,
   _: Event
@@ -109,23 +108,23 @@ function handleScrollEnd(
 }
 
 function handleCallbacks(
-  zoomable: Zoomable,
-  options: ZoomInOptions,
+  showcased: Showcased,
+  options: ShowcaseOptions,
   state: "open" | "close"
 ): void {
   setTimeout(() => {
-    const startAction = zoomable.functionBindings.get(
+    const startAction = showcased.functionBindings.get(
       state === "open" ? "AnimationOpenStart" : "AnimationCloseStart"
     );
     if (startAction) {
-      startAction.apply(zoomable, [zoomable]);
+      startAction.apply(showcased, [showcased]);
     }
     setTimeout(() => {
-      const endAction = zoomable.functionBindings.get(
+      const endAction = showcased.functionBindings.get(
         state === "open" ? "AnimationOpenEnd" : "AnimationCloseEnd"
       );
       if (endAction) {
-        endAction.apply(zoomable, [zoomable]);
+        endAction.apply(showcased, [showcased]);
       }
     }, (options.transitionDuration || 0) * 1000);
   }, (options.transitionDelay || 0) * 1000);
@@ -133,17 +132,12 @@ function handleCallbacks(
 
 function handleSpotlight(
   element: SketcherHTMLElement,
-  options: ZoomInOptions
-): void {}
-
-function handleInfiltrare(
-  element: SketcherHTMLElement,
-  options: ZoomInOptions
+  options: ShowcaseOptions
 ): void {}
 
 function handlePopUp(
   element: SketcherHTMLElement,
-  options: ZoomInOptions,
+  options: ShowcaseOptions,
   rect?: ElementBoundingRect
 ): void {
   const elementBoundingRect: BoundingRect = rect

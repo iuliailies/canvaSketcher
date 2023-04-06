@@ -1,4 +1,6 @@
-import { BoundingRect, ElementBoundingRect } from "./zoom-in";
+import { BoundingRect, ElementBoundingRect } from "./showcase";
+
+export const showcasedClass = "showcased";
 
 export function resetTransformStyle(
   element: HTMLElement,
@@ -6,7 +8,7 @@ export function resetTransformStyle(
 ): void {
   element.style.transform = "";
   setTimeout(() => {
-    element.classList.remove("zoomed");
+    element.classList.remove(showcasedClass);
     element.style.removeProperty("z-index");
   }, (delay || 0) * 1000);
 }
@@ -34,8 +36,8 @@ export function isShortcutPressed(
   return res;
 }
 
-export interface ZoomInOptions {
-  // time until the zoom animaiton is initiated, in seconds
+export interface ShowcaseOptions {
+  // time until the animaiton is initiated, in seconds
   transitionDelay?: number;
   // animaiton duration, in seconds
   transitionDuration?: number;
