@@ -7,7 +7,7 @@ export type ZoomState = "zoom";
 export class ZoomEnvironment {
   outsideFunctionBindings = new Map<
     ZoomState,
-    (this: SketcherHTMLElement, eventObj: Event, data: any) => any
+    (this: SketcherHTMLElement, eventObj: Event, zoom: number) => any
   >();
   constructor() {}
 
@@ -16,7 +16,7 @@ export class ZoomEnvironment {
     zoomable: HTMLElement,
     zoom: number = 1
   ): ZoomEnvironment {
-    zoomableContainer.addEventListener("wheel", (event) => {
+    zoomableContainer.addEventListener("wheel", (event: WheelEvent) => {
       const prevZoom = zoom;
       zoom += event.deltaY > 0 ? -0.1 : 0.1;
       const mousePosition = { x: event.pageX, y: event.pageY };
@@ -27,7 +27,17 @@ export class ZoomEnvironment {
         prevZoom,
         mousePosition
       );
+      // call user defined function
+      this.outsideFunctionBindings.get("zoom")?.apply(zoomable, [event, zoom]);
     });
+    return this;
+  }
+
+  public on(
+    state: ZoomState,
+    action: (this: SketcherHTMLElement, eventObj: Event, zoom: number) => any
+  ): ZoomEnvironment {
+    this.outsideFunctionBindings.set(state, action);
     return this;
   }
 
