@@ -2,6 +2,7 @@ import { select, selectAll } from "./select";
 import { SketcherHTMLElement } from "../models/sketcher-html-element";
 import { contextListener } from "./helpers";
 import { DragEnvironment, DragOptions } from "../drag/drag-environment";
+import { ZoomEnvironment } from "../zoom/zoom-environment";
 
 export class Selection {
   constructor(
@@ -150,6 +151,18 @@ export class Selection {
   public draggable(options?: DragOptions): Selection {
     let dragEnvironment = new DragEnvironment();
     dragEnvironment.apply(this, options);
+    return this;
+  }
+
+  public zoomable(): Selection {
+    let zoomEnvironment = new ZoomEnvironment();
+    let parent: SketcherHTMLElement;
+    this.elements.forEach((elems, index) => {
+      parent = this.parentElements[index];
+      elems.forEach((elem) => {
+        zoomEnvironment.apply(parent, elem);
+      });
+    });
     return this;
   }
 }

@@ -9,7 +9,7 @@ export interface Point {
 
 export interface DragOptions {
   container?: HTMLElement; // TODO
-  scale?: number; // TODO: check passing by refference?
+  scale?: number;
   threshold?: number;
   disableEvents?: boolean;
 }
@@ -116,12 +116,15 @@ export class DragEnvironment {
     ev.preventDefault();
     ev.stopImmediatePropagation();
 
+    const scale = options.scale
+      ? options.scale
+      : elem.getBoundingClientRect().width / elem.offsetWidth;
+
     // prevent drag behaviour if Manhattan distance from the initial position to the current one < threshold
     if (options.threshold) {
       if (
         Math.abs(ev.x - dragInstance.mouseStartPosition.x) +
-          Math.abs(ev.y - dragInstance.mouseStartPosition.y) /
-            (options?.scale || 1) <
+          Math.abs(ev.y - dragInstance.mouseStartPosition.y) / (scale || 1) <
         options.threshold
       ) {
         return;
@@ -143,13 +146,13 @@ export class DragEnvironment {
     select(elem).style(
       "left",
       dragInstance.elementStartPosition.x +
-        (ev.x - dragInstance.mouseStartPosition.x) / (options?.scale || 1) +
+        (ev.x - dragInstance.mouseStartPosition.x) / (scale || 1) +
         "px"
     );
     select(elem).style(
       "top",
       dragInstance.elementStartPosition.y +
-        (ev.y - dragInstance.mouseStartPosition.y) / (options?.scale || 1) +
+        (ev.y - dragInstance.mouseStartPosition.y) / (scale || 1) +
         "px"
     );
 
