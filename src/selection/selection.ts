@@ -165,4 +165,8 @@ export class Selection {
     });
     return this;
   }
+
+  public getFirst(): SketcherHTMLElement | undefined {
+    return this.elements[0][0];
+  }
 }
