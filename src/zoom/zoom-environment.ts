@@ -3,22 +3,13 @@ import { SketcherHTMLElement } from "../models/sketcher-html-element";
 import { select } from "../selection/select";
 import { Selection } from "../selection/selection";
 import { isShortcutPressed } from "../showcase/helpers";
-
-export type ZoomState = "zoom";
-
-export interface ZoomOptions {
-  // how much the zoom value should be incremented/decremented inside one callback;
-  step?: number;
-  // maximum zoom value
-  upperBound?: number;
-  // minimum zoom value
-  lowerBound?: number;
-  // method for triggering zoom behaviour;
-  method?: {
-    type: "mouse" | "keyboard";
-    ctrlKey?: boolean;
-  };
-}
+import {
+  ZoomState,
+  ZoomOptions,
+  TargetOptions,
+  defaultZoomOptions,
+  defaultTargetOptions,
+} from "./zoom.model";
 
 export class ZoomEnvironment {
   outsideFunctionBindings = new Map<
@@ -30,14 +21,6 @@ export class ZoomEnvironment {
       target: HTMLElement | undefined
     ) => any
   >();
-
-  defaultOptions: ZoomOptions = {
-    step: 0.1,
-    method: {
-      type: "mouse",
-      ctrlKey: true,
-    },
-  };
 
   targets: HTMLElement[] = [];
   activeTarget?: HTMLElement;
@@ -51,7 +34,7 @@ export class ZoomEnvironment {
     private zoomable: HTMLElement
   ) {}
 
-  public apply(options: ZoomOptions = this.defaultOptions): ZoomEnvironment {
+  public apply(options: ZoomOptions = defaultZoomOptions): ZoomEnvironment {
     let zoom = +(
       this.zoomable.getBoundingClientRect().width / this.zoomable.offsetWidth
     ).toFixed(1);
@@ -110,11 +93,14 @@ export class ZoomEnvironment {
     return this;
   }
 
-  public focus(target: HTMLElement): ZoomEnvironment {
+  public focus(
+    target: HTMLElement,
+    options: TargetOptions = defaultTargetOptions
+  ): ZoomEnvironment {
     const prevZoom = +(
       this.zoomable.getBoundingClientRect().width / this.zoomable.offsetWidth
     ).toFixed(1);
-    const zoom = this.getElementZoom(target, prevZoom);
+    const zoom = this.getElementZoom(target, prevZoom, options.boundary || 0);
 
     const targetRect = target.getBoundingClientRect();
     const containerRect = this.zoomableContainer.getBoundingClientRect();
@@ -151,7 +137,8 @@ export class ZoomEnvironment {
       this.zoomableTransformCoordinates.top +
         containerCenter.y -
         targetCenter.y,
-      zoom
+      zoom,
+      options
     );
     return this;
   }
@@ -272,24 +259,50 @@ export class ZoomEnvironment {
     zoomable: HTMLElement,
     left: number,
     top: number,
-    zoom: number
+    zoom: number,
+    options?: TargetOptions
   ): void {
+    const maxTranslation =
+      this.zoomableTransformCoordinates.left - left <
+      this.zoomableTransformCoordinates.top - top
+        ? this.zoomableTransformCoordinates.left - left
+        : this.zoomableTransformCoordinates.top - top;
+
     this.zoomableTransformCoordinates = {
       left: left,
       top: top,
     };
     zoomable.style.transform = `translate(${left}px, ${top}px) scale(${zoom}) `;
+    if (!options) {
+      zoomable.style.removeProperty("transitionProperty");
+      return;
+    }
+    zoomable.style.transitionProperty = `transform`;
+    zoomable.style.transitionDelay = options.transitionDelay + "s" || "0s";
+    zoomable.style.transitionDuration =
+      (options.transitionDuration || 0) * maxTranslation + "s";
+    if (options.transitionCurve) {
+      zoomable.style.transitionTimingFunction = options.transitionCurve;
+    }
   }
 
   // calculates the zoom needed to focus an element inside the zoomable
-  private getElementZoom(element: HTMLElement, prevZoom: number): number {
+  private getElementZoom(
+    element: HTMLElement,
+    prevZoom: number,
+    boundary: number
+  ): number {
     const zoomableContainerRect =
       this.zoomableContainer.getBoundingClientRect();
     const elementRect = element.getBoundingClientRect();
     const heightZoom =
-      zoomableContainerRect.height / (elementRect.height / prevZoom);
+      (zoomableContainerRect.height -
+        2 * zoomableContainerRect.height * boundary) /
+      (elementRect.height / prevZoom);
     const widthZoom =
-      zoomableContainerRect.width / (elementRect.width / prevZoom);
+      (zoomableContainerRect.width -
+        2 * zoomableContainerRect.width * boundary) /
+      (elementRect.width / prevZoom);
     return heightZoom < widthZoom ? heightZoom : widthZoom;
   }
 }
