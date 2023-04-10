@@ -155,12 +155,12 @@ export class Selection {
   }
 
   public zoomable(): Selection {
-    let zoomEnvironment = new ZoomEnvironment();
     let parent: SketcherHTMLElement;
     this.elements.forEach((elems, index) => {
       parent = this.parentElements[index];
       elems.forEach((elem) => {
-        zoomEnvironment.apply(parent, elem);
+        let zoomEnvironment = new ZoomEnvironment(parent, elem);
+        zoomEnvironment.apply();
       });
     });
     return this;

@@ -1,5 +1,8 @@
 import { ZoomEnvironment } from "./zoom-environment";
 
-export function zoom(): ZoomEnvironment {
-  return new ZoomEnvironment();
+export function zoom(
+  zoomableContainer: HTMLElement,
+  zoomable: HTMLElement
+): ZoomEnvironment {
+  return new ZoomEnvironment(zoomableContainer, zoomable);
 }
