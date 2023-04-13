@@ -1,7 +1,7 @@
 import { AnimatedOptions } from "../models/animated";
-import { BoundingRect, ElementBoundingRect } from "./showcase";
+import { BoundingRect, ElementBoundingRect } from "./pop-up";
 
-export const showcasedClass = "showcased";
+export const poppedOutClass = "popped-out";
 
 export function resetTransformStyle(
   element: HTMLElement,
@@ -10,7 +10,7 @@ export function resetTransformStyle(
 ): void {
   element.style.transform = prevTransform || "";
   setTimeout(() => {
-    element.classList.remove(showcasedClass);
+    element.classList.remove(poppedOutClass);
     element.style.removeProperty("z-index");
   }, (delay || 0) * 1000);
 }
@@ -38,7 +38,7 @@ export function isShortcutPressed(
   return res;
 }
 
-export interface ShowcaseOptions extends AnimatedOptions {
+export interface PopUpOptions extends AnimatedOptions {
   // margin around the zoomed element; in percentage, relative to the window
   boundary?: string;
 }

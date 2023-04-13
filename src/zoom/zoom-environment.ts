@@ -3,7 +3,7 @@ import { Animated } from "../models/animated";
 import { SketcherHTMLElement } from "../models/sketcher-html-element";
 import { select } from "../selection/select";
 import { Selection } from "../selection/selection";
-import { isShortcutPressed } from "../showcase/helpers";
+import { isShortcutPressed } from "../pop-up/helpers";
 import { getElement2DTransform, getElementFocusZoom } from "./helpers";
 import {
   ZoomState,
@@ -26,7 +26,7 @@ export class ZoomEnvironment {
 
   targets: HTMLElement[] = [];
   currentTarget?: HTMLElement;
-  focusedQueue: Animated[] = [];
+  focusedStack: Animated[] = [];
 
   constructor(
     private zoomableContainer: HTMLElement,
@@ -135,7 +135,7 @@ export class ZoomEnvironment {
 
     const focused = new Animated(target, prevTransformValue, options);
 
-    this.focusedQueue?.push(focused);
+    this.focusedStack?.push(focused);
 
     focused.handleCallbacks("open");
 
@@ -156,7 +156,7 @@ export class ZoomEnvironment {
   }
 
   public unfocus(): Animated | undefined {
-    const unfocused = this.focusedQueue?.pop();
+    const unfocused = this.focusedStack?.pop();
     if (!unfocused) {
       return unfocused;
     }
@@ -196,7 +196,7 @@ export class ZoomEnvironment {
   ): void {
     if (exitable) {
       exitable.addEventListener("click", () => {
-        if (this.focusedQueue[this.focusedQueue.length - 1] === focused) {
+        if (this.focusedStack[this.focusedStack.length - 1] === focused) {
           this.unfocus();
         }
       });
@@ -205,9 +205,9 @@ export class ZoomEnvironment {
       document.addEventListener("keydown", (e) => {
         if (
           isShortcutPressed(e, exitShortcut) &&
-          this.focusedQueue[this.focusedQueue.length - 1] === focused
+          this.focusedStack[this.focusedStack.length - 1] === focused
         ) {
-          if (this.focusedQueue[this.focusedQueue.length - 1] === focused) {
+          if (this.focusedStack[this.focusedStack.length - 1] === focused) {
             this.unfocus();
           }
         }
@@ -222,7 +222,7 @@ export class ZoomEnvironment {
     event: Event,
     mousePosition?: Point
   ): number {
-    if (this.focusedQueue?.length) {
+    if (this.focusedStack?.length) {
       return zoom;
     }
     const step = options.step !== undefined ? options.step : 0.1;

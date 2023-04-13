@@ -5,14 +5,9 @@ import {
   isShortcutPressed,
   resetTransformStyle,
   updateElementBoundingRect,
-  ShowcaseOptions,
-  showcasedClass,
+  PopUpOptions,
+  poppedOutClass,
 } from "./helpers";
-
-export enum ShowcaseMode {
-  Spotlight = "SPOTLIGHT",
-  PopUp = "POPUP",
-}
 
 export interface BoundingRect {
   left: number;
@@ -27,32 +22,19 @@ export interface ElementBoundingRect {
   zoom: number;
 }
 
-const modeFunctionAssosiation = new Map<
-  ShowcaseMode,
-  (
-    element: SketcherHTMLElement,
-    options: ShowcaseOptions,
-    rect?: ElementBoundingRect
-  ) => any
->([
-  [ShowcaseMode.Spotlight, handleSpotlight],
-  [ShowcaseMode.PopUp, handlePopUp],
-]);
-
-export function showcase(
+export function popup(
   element: SketcherHTMLElement,
-  mode: ShowcaseMode = ShowcaseMode.Spotlight,
-  options: ShowcaseOptions = {},
+  options: PopUpOptions = {},
   exitable?: HTMLElement,
   exitShortcut?: { key: string; ctrl?: boolean; shift?: boolean; alt?: boolean }
 ): Animated {
   let showcased = new Animated(element, undefined, options);
-  // avoid zooming an element twice on showcase
-  if (element.classList.contains(showcasedClass)) {
+  // avoid zooming an element twice on popup
+  if (element.classList.contains(poppedOutClass)) {
     return showcased;
   }
 
-  element.classList.add(showcasedClass);
+  element.classList.add(poppedOutClass);
   element.style.zIndex = "10000";
   const elementBoundingRect: ElementBoundingRect = {
     rect: element.getBoundingClientRect(),
@@ -62,13 +44,12 @@ export function showcase(
     },
     zoom: 1,
   };
-  modeFunctionAssosiation.get(mode)!(element, options, elementBoundingRect);
+  handlePopUp(element, options, elementBoundingRect);
   showcased.handleCallbacks("open");
   let scrollEndTimer: any;
   let functionBinding = handleScrollEnd.bind(
     handleScrollEnd,
     element,
-    mode,
     options,
     elementBoundingRect,
     scrollEndTimer
@@ -95,26 +76,20 @@ export function showcase(
 
 function handleScrollEnd(
   element: SketcherHTMLElement,
-  mode: ShowcaseMode = ShowcaseMode.Spotlight,
-  options: ShowcaseOptions = {},
+  options: PopUpOptions = {},
   rect: ElementBoundingRect,
   timer: any,
   _: Event
 ): void {
   clearTimeout(timer);
   timer = setTimeout(() => {
-    modeFunctionAssosiation.get(mode)!(element, options, rect);
+    handlePopUp(element, options, rect);
   }, 50);
 }
 
-function handleSpotlight(
-  element: SketcherHTMLElement,
-  options: ShowcaseOptions
-): void {}
-
 function handlePopUp(
   element: SketcherHTMLElement,
-  options: ShowcaseOptions,
+  options: PopUpOptions,
   rect?: ElementBoundingRect
 ): void {
   const elementBoundingRect: BoundingRect = rect
