@@ -19,10 +19,11 @@ Soon to be published on NPM. See [npm documentation](https://docs.npmjs.com/) on
   - [x] sketch
 - [x] Function Values & Parameter Accesibility
 - [x] Dragging
-- [ ] Zooming
-  - [x] Pop-up Zoom
-  - [ ] Standard Zoom
-  - [ ] Spotlight Zoom
+- [x] Zooming
+  - [x] Standard Zoom
+  - [x] Focused Zoom
+- [x] PopUp
+- [ ] Panning
 - [ ] Force simulation
 
 ## DOM Selection
@@ -156,11 +157,67 @@ export interface DragOptions {
 
 ## Zooming
 
-`!` This feature might suffer future changes, since it is WIP.
+CanvaSketcher turned zooming into a very versatile feature. Similarly to how dragging is implemented, the `zoom()` function creates a Zoom Environment. However, it requires 2 arguments: a `zoomable` and a `zoomableContainer`. The latter is considered the wrapper, inside which the zoomable is translated accordingly.
 
-Zooming is a core feature of CanvaSketcher, because it was adapted for mutiple scenarios. Besides the classic mouse-centered zoom, CanvaSketcher offers presentation-style zooming, where a certain object is brought into focus and allows room for its content to be expanded. The feature can be accessed through the global method `.zoomIn()`.
+### Standard zoom
 
-The method takes multiple parameters, the first being a Selection to which is applied. It also has optional parameters, such as an `exitable` HTMLElement or an `exitShortcut` object. When in a presentation-style zoom mode, they allow ways of returning to default. The method also takes an option object:
+By calling `apply()` on a Zoom Environment, the zoom listeners are triggered. CanvaSketcher supports 2 types of standard zooming: mouse-wheel based and keyboard based, both with or without a Ctrl key. Mouse-wheel based zooming increments or decrements the zoom value accordingly, while also translating the `zoomable` based on the mouse posiiton. Therefore, the mouse cursor remains in the same point along the whole translation. Keyboard zooming works similarly, but zooms towards the center of the `zoomableContainer`.
+
+Specifying the zoom type is done by passing an options object to the `apply` function. Along with it you can specify the zoom step and bounds, if any.
+
+A standard zoom behavior can be applied to a `Selection` by just calling `zoomable()` on it. A Zoom Environment will be created for each element <-> parent pair of the Selection. In this case, `apply()` will be called by default, which ctrl + mousewheel as default behaviour.
+
+The ZoomEnvironment also accepts a `zoom` handler function, which will be called whenever the zoom value was changed. The callback function takes the `zoomable` as `this`, while also giving access to other useful parameters: the current zoom value, the event handler and, lastly, the target.
+
+Targets are elements belonging to the Zoom Environment, which can be marked as a target by calling `targetable(selection: Selection)`. All elements in the selection will be considered targets. Whenever a zoom action is performed, the `target` parameter of the callback function will hold the target element which is currently under the mouse wheel, or "undefined" if there is no such element.
+
+A complete example of the zoom feature:
+
+```
+    const zoomableContainer = canvaSketcher.select('wrapper').getFirst();
+    const zoomable = canvaSketcher.select('zoomable').getFirst();
+
+    const rectangless = canvaSketcher
+      .sketch('div', ['hi', 'there'], rect)
+      .style('width', () => '50px')
+      .style('height', '50px')
+
+    if(zoomable && zoomableContainer) {
+      const zoomEnv = canvaSketcher
+      .zoom(
+        zoomableContainer, zoomable
+      )
+      .apply({
+        upperBound: 1.5,
+        lowerBound: 0.6,
+        method: {
+          type: 'mouse',
+          ctrlKey: true,
+        },
+      })
+      .on(
+        'zoom',
+        function (ev: Event, zoom: number, target: HTMLElement | any) {
+          ev.preventDefault();
+        }
+      )
+      .targetable(rectangles);
+    }
+```
+
+or, much shorter but less customizable:
+
+```
+canvaSketcher.select('.wrapper').selectAll('.card-container').zoomable();
+```
+
+### Focused zoom
+
+Besides the classic zoom, CanvaSketcher offers presentation-style zooming. Triggered by the `focus(target: HtmlElement)` function, the `zoomable` element is zoomed as much as possible, such that the target element is centered inside the `zoomableContainer`. Multiple elements can be focused inside a Zoom Environment, as they're being kept track of using a stack.
+
+The `focus()` function also takes some optional parameters, such as an `exitable` HTMLElement or an `exitShortcut` object. They allow diferent ways of returning to the previously focused element or, when the stack is empty, to the default state. If those 2 methods are not enough, a ZoomEnvironment also offers an `unfocus()` function, which can be called independently.
+
+The `focus()` method also takes an option object:
 
 ```
 export interface ZoomInOptions {
@@ -170,42 +227,19 @@ export interface ZoomInOptions {
     transitionDuration?: number;
     // animation curve style
     transitionCurve?: "linear" | "ease" | "ease-in" | "ease-out" | "ease-in-out";
-    // margin around the zoomed element; in percentage, relative to the window
+    // margin around the zoomed element; in percentage, relative to the zoomableContainer
     boundary?: string;
 }
 ```
 
-The `.zoomIn()` method returns a `Zoomable` object. The purpose of this is providing a method binding posibility on different ZoomStates: "AnimationOpenStart" | "AnimationOpenEnd" | "AnimationCloseStart" | "AnimationCloseEnd". For example, at the end of a presentation-style zoom event, the developer might want to show extra content inside the element, or to alter the text font-size.
+The `.focus()` method returns a `Animated` object. The purpose of this is providing a method binding posibility on different ZoomStates: "AnimationOpenStart" | "AnimationOpenEnd" | "AnimationCloseStart" | "AnimationCloseEnd". For example, at the end of a focused zoom event, the developer might want to show extra content inside the element, or to alter the text font-size.
 
-Zoom usage example:
-```
-canvaSketcher.selectAll('.board').on('click', function (event: Event, data: any) {
-      canvaSketcher.zoomIn(
-        this,
-        gv.ZoomInMode.PopUp,
-        {
-          transitionDuration: 1,
-          boundary: '10%',
-        },
-        document.querySelector('.exitBtn')! as HTMLElement,
-      )
-        .on('AnimationOpenEnd', function () {
-          canvaSketcher.select('.exitBtn').style('display'); // show exit button
-        })
-        .on('AnimationCloseEnd', () => {
-          canvaSketcher.select('.exitBtn').style('display', 'none'); // hide exit button
-        });
-    });
+## PopUp
+Similar concept to the focused zoom, but with no need for a Zoom Environment: Pop-up zoom takes an HTML element and transforms it with translation ans scaling. The element is cenetred inside the document and enlarged, independently of the document scroll state.
 
-```
-
-
-As seen above, the `.zoomIn()` methos also takes a zoom mode parameter:
-### Pop-up Zoom
-This zoom mode takes the element, translates it towards the center of the screen and increases its dimensions.
+The functionality is triggered by calling `popup(element: HtmlElement)` and can be configured similarly to Focused Zoom. It takes the same `option`, `exitable` and `exitableShortcut` optional parameters and it also supports method binding possibilities for the 4 zoom states: "AnimationOpenStart" | "AnimationOpenEnd" | "AnimationCloseStart" | "AnimationCloseEnd".
 
 ### TODO:
 
-Standard Zoom <br/>
-Spotlight Zoom <br/>
+Panning <br>
 Force simulation
