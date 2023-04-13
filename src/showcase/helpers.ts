@@ -1,12 +1,14 @@
+import { AnimatedOptions } from "../models/animated";
 import { BoundingRect, ElementBoundingRect } from "./showcase";
 
 export const showcasedClass = "showcased";
 
 export function resetTransformStyle(
   element: HTMLElement,
-  delay?: number
+  delay?: number,
+  prevTransform?: string
 ): void {
-  element.style.transform = "";
+  element.style.transform = prevTransform || "";
   setTimeout(() => {
     element.classList.remove(showcasedClass);
     element.style.removeProperty("z-index");
@@ -36,13 +38,7 @@ export function isShortcutPressed(
   return res;
 }
 
-export interface ShowcaseOptions {
-  // time until the animaiton is initiated, in seconds
-  transitionDelay?: number;
-  // animaiton duration, in seconds
-  transitionDuration?: number;
-  // animation curve style
-  transitionCurve?: "linear" | "ease" | "ease-in" | "ease-out" | "ease-in-out";
+export interface ShowcaseOptions extends AnimatedOptions {
   // margin around the zoomed element; in percentage, relative to the window
   boundary?: string;
 }

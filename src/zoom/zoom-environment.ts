@@ -1,8 +1,10 @@
 import { Point } from "../drag/drag-environment";
+import { Animated } from "../models/animated";
 import { SketcherHTMLElement } from "../models/sketcher-html-element";
 import { select } from "../selection/select";
 import { Selection } from "../selection/selection";
 import { isShortcutPressed } from "../showcase/helpers";
+import { getElementFocusZoom } from "./helpers";
 import {
   ZoomState,
   ZoomOptions,
@@ -23,10 +25,12 @@ export class ZoomEnvironment {
   >();
 
   targets: HTMLElement[] = [];
-  activeTarget?: HTMLElement;
+  currentTarget?: HTMLElement;
+  focusedQueue: Animated[] = [];
+
   zoomableTransformCoordinates = {
-    left: 0,
-    top: 0,
+    x: 0,
+    y: 0,
   };
 
   constructor(
@@ -83,10 +87,10 @@ export class ZoomEnvironment {
       elems.forEach((elem) => {
         this.targets.push(elem);
         elem.addEventListener("mouseenter", () => {
-          this.activeTarget = elem;
+          this.currentTarget = elem;
         });
         elem.addEventListener("mouseleave", () => {
-          this.activeTarget = undefined;
+          this.currentTarget = undefined;
         });
       });
     });
@@ -95,12 +99,25 @@ export class ZoomEnvironment {
 
   public focus(
     target: HTMLElement,
-    options: TargetOptions = defaultTargetOptions
-  ): ZoomEnvironment {
+    options: TargetOptions = defaultTargetOptions,
+    exitable?: HTMLElement,
+    exitShortcut?: {
+      key: string;
+      ctrl?: boolean;
+      shift?: boolean;
+      alt?: boolean;
+    }
+  ): Animated {
     const prevZoom = +(
       this.zoomable.getBoundingClientRect().width / this.zoomable.offsetWidth
     ).toFixed(1);
-    const zoom = this.getElementZoom(target, prevZoom, options.boundary || 0);
+
+    const zoom = getElementFocusZoom(
+      this.zoomableContainer,
+      target,
+      prevZoom,
+      options.boundary || 0
+    );
 
     const targetRect = target.getBoundingClientRect();
     const containerRect = this.zoomableContainer.getBoundingClientRect();
@@ -123,24 +140,52 @@ export class ZoomEnvironment {
       y: containerRect.top + containerRect.height / 2,
     };
 
+    const focused = new Animated(
+      target,
+      {
+        x: this.zoomableTransformCoordinates.x,
+        y: this.zoomableTransformCoordinates.y,
+        zoom: prevZoom,
+      },
+      options
+    );
+
+    this.focusedQueue?.push(focused);
+
     // adjust translation coordinates to new zoom
     this.zoomableTransformCoordinates = {
-      left: (this.zoomableTransformCoordinates.left * zoom) / prevZoom,
-      top: (this.zoomableTransformCoordinates.top * zoom) / prevZoom,
+      x: (this.zoomableTransformCoordinates.x * zoom) / prevZoom,
+      y: (this.zoomableTransformCoordinates.y * zoom) / prevZoom,
     };
 
+    focused.handleCallbacks("open");
+
     this.transformCanvas(
-      this.zoomable,
-      this.zoomableTransformCoordinates.left +
-        containerCenter.x -
-        targetCenter.x,
-      this.zoomableTransformCoordinates.top +
-        containerCenter.y -
-        targetCenter.y,
+      this.zoomableTransformCoordinates.x + containerCenter.x - targetCenter.x,
+      this.zoomableTransformCoordinates.y + containerCenter.y - targetCenter.y,
       zoom,
       options
     );
-    return this;
+
+    this.handleExitCalls(focused, exitable, exitShortcut);
+
+    return focused;
+  }
+
+  public unfocus(): Animated | undefined {
+    const unfocused = this.focusedQueue?.pop();
+    if (!unfocused) {
+      return unfocused;
+    }
+    const prevTransform = unfocused.prevTransformValues!;
+    this.transformCanvas(
+      prevTransform.x,
+      prevTransform.y,
+      prevTransform.zoom,
+      unfocused.options
+    );
+    unfocused.handleCallbacks("close");
+    return unfocused;
   }
 
   public on(
@@ -156,6 +201,37 @@ export class ZoomEnvironment {
     return this;
   }
 
+  private handleExitCalls(
+    focused: Animated,
+    exitable?: HTMLElement,
+    exitShortcut?: {
+      key: string;
+      ctrl?: boolean;
+      shift?: boolean;
+      alt?: boolean;
+    }
+  ): void {
+    if (exitable) {
+      exitable.addEventListener("click", () => {
+        if (this.focusedQueue[this.focusedQueue.length - 1] === focused) {
+          this.unfocus();
+        }
+      });
+    }
+    if (exitShortcut) {
+      document.addEventListener("keydown", (e) => {
+        if (
+          isShortcutPressed(e, exitShortcut) &&
+          this.focusedQueue[this.focusedQueue.length - 1] === focused
+        ) {
+          if (this.focusedQueue[this.focusedQueue.length - 1] === focused) {
+            this.unfocus();
+          }
+        }
+      });
+    }
+  }
+
   private zoomCallback(
     zoom: number,
     direction: -1 | 1,
@@ -163,6 +239,9 @@ export class ZoomEnvironment {
     event: Event,
     mousePosition?: Point
   ): number {
+    if (this.focusedQueue?.length) {
+      return zoom;
+    }
     const step = options.step !== undefined ? options.step : 0.1;
     const prevZoom = zoom;
 
@@ -174,7 +253,7 @@ export class ZoomEnvironment {
       // call user defined function
       this.outsideFunctionBindings
         .get("zoom")
-        ?.apply(this.zoomable, [event, zoom, this.activeTarget]);
+        ?.apply(this.zoomable, [event, zoom, this.currentTarget]);
       return prevZoom;
     }
 
@@ -183,7 +262,7 @@ export class ZoomEnvironment {
     // call user defined function
     this.outsideFunctionBindings
       .get("zoom")
-      ?.apply(this.zoomable, [event, zoom, this.activeTarget]);
+      ?.apply(this.zoomable, [event, zoom, this.currentTarget]);
 
     return zoom;
   }
@@ -199,7 +278,6 @@ export class ZoomEnvironment {
       centerPoint
     );
     this.transformCanvas(
-      this.zoomable,
       translationCoordinates.x,
       translationCoordinates.y,
       zoom
@@ -256,53 +334,24 @@ export class ZoomEnvironment {
   }
 
   private transformCanvas(
-    zoomable: HTMLElement,
     left: number,
     top: number,
     zoom: number,
     options?: TargetOptions
   ): void {
-    const maxTranslation =
-      this.zoomableTransformCoordinates.left - left <
-      this.zoomableTransformCoordinates.top - top
-        ? this.zoomableTransformCoordinates.left - left
-        : this.zoomableTransformCoordinates.top - top;
-
     this.zoomableTransformCoordinates = {
-      left: left,
-      top: top,
+      x: left,
+      y: top,
     };
-    zoomable.style.transform = `translate(${left}px, ${top}px) scale(${zoom}) `;
+    this.zoomable.style.transform = `translate(${left}px, ${top}px) scale(${zoom}) `;
     if (!options) {
-      zoomable.style.removeProperty("transitionProperty");
+      this.zoomable.style.removeProperty("transition");
       return;
     }
-    zoomable.style.transitionProperty = `transform`;
-    zoomable.style.transitionDelay = options.transitionDelay + "s" || "0s";
-    zoomable.style.transitionDuration =
-      (options.transitionDuration || 0) * maxTranslation + "s";
-    if (options.transitionCurve) {
-      zoomable.style.transitionTimingFunction = options.transitionCurve;
-    }
-  }
-
-  // calculates the zoom needed to focus an element inside the zoomable
-  private getElementZoom(
-    element: HTMLElement,
-    prevZoom: number,
-    boundary: number
-  ): number {
-    const zoomableContainerRect =
-      this.zoomableContainer.getBoundingClientRect();
-    const elementRect = element.getBoundingClientRect();
-    const heightZoom =
-      (zoomableContainerRect.height -
-        2 * zoomableContainerRect.height * boundary) /
-      (elementRect.height / prevZoom);
-    const widthZoom =
-      (zoomableContainerRect.width -
-        2 * zoomableContainerRect.width * boundary) /
-      (elementRect.width / prevZoom);
-    return heightZoom < widthZoom ? heightZoom : widthZoom;
+    this.zoomable.style.transition = `transform ${
+      options.transitionDuration + "s" || "0s"
+    } ${options.transitionCurve || ""} ${
+      options.transitionDelay + "s" || "0s"
+    }`;
   }
 }

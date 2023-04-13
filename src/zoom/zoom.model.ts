@@ -1,4 +1,12 @@
+import { AnimatedOptions } from "../models/animated";
+
 export type ZoomState = "zoom";
+
+export interface TransformValue {
+  left: number;
+  top: number;
+  zoom: number;
+}
 
 export interface ZoomOptions {
   // how much the zoom value should be incremented/decremented inside one callback;
@@ -14,13 +22,7 @@ export interface ZoomOptions {
   };
 }
 
-export interface TargetOptions {
-  // time until the animaiton is initiated, in seconds
-  transitionDelay?: number;
-  // animaiton duration, in seconds/100px
-  transitionDuration?: number;
-  // animation curve style
-  transitionCurve?: "linear" | "ease" | "ease-in" | "ease-out" | "ease-in-out";
+export interface TargetOptions extends AnimatedOptions {
   // margin around the zoomed element; in percentage, relative to zoomable container
   boundary?: number;
 }

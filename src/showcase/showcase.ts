@@ -1,3 +1,4 @@
+import { Animated } from "../models/animated";
 import { SketcherHTMLElement } from "../models/sketcher-html-element";
 import {
   getBoundary,
@@ -7,7 +8,6 @@ import {
   ShowcaseOptions,
   showcasedClass,
 } from "./helpers";
-import { Showcased } from "./showcased";
 
 export enum ShowcaseMode {
   Spotlight = "SPOTLIGHT",
@@ -45,8 +45,8 @@ export function showcase(
   options: ShowcaseOptions = {},
   exitable?: HTMLElement,
   exitShortcut?: { key: string; ctrl?: boolean; shift?: boolean; alt?: boolean }
-): Showcased {
-  let showcased = new Showcased(element);
+): Animated {
+  let showcased = new Animated(element, undefined, options);
   // avoid zooming an element twice on showcase
   if (element.classList.contains(showcasedClass)) {
     return showcased;
@@ -63,7 +63,7 @@ export function showcase(
     zoom: 1,
   };
   modeFunctionAssosiation.get(mode)!(element, options, elementBoundingRect);
-  handleCallbacks(showcased, options, "open");
+  showcased.handleCallbacks("open");
   let scrollEndTimer: any;
   let functionBinding = handleScrollEnd.bind(
     handleScrollEnd,
@@ -78,7 +78,7 @@ export function showcase(
     exitable.addEventListener("click", function () {
       resetTransformStyle(element, options.transitionDuration);
       document.removeEventListener("scroll", functionBinding);
-      handleCallbacks(showcased, options, "close");
+      showcased.handleCallbacks("close");
     });
   }
   if (exitShortcut) {
@@ -86,7 +86,7 @@ export function showcase(
       if (isShortcutPressed(e, exitShortcut)) {
         resetTransformStyle(element, options.transitionDuration);
         document.removeEventListener("scroll", functionBinding);
-        handleCallbacks(showcased, options, "close");
+        showcased.handleCallbacks("close");
       }
     });
   }
@@ -105,29 +105,6 @@ function handleScrollEnd(
   timer = setTimeout(() => {
     modeFunctionAssosiation.get(mode)!(element, options, rect);
   }, 50);
-}
-
-function handleCallbacks(
-  showcased: Showcased,
-  options: ShowcaseOptions,
-  state: "open" | "close"
-): void {
-  setTimeout(() => {
-    const startAction = showcased.functionBindings.get(
-      state === "open" ? "AnimationOpenStart" : "AnimationCloseStart"
-    );
-    if (startAction) {
-      startAction.apply(showcased, [showcased]);
-    }
-    setTimeout(() => {
-      const endAction = showcased.functionBindings.get(
-        state === "open" ? "AnimationOpenEnd" : "AnimationCloseEnd"
-      );
-      if (endAction) {
-        endAction.apply(showcased, [showcased]);
-      }
-    }, (options.transitionDuration || 0) * 1000);
-  }, (options.transitionDelay || 0) * 1000);
 }
 
 function handleSpotlight(
