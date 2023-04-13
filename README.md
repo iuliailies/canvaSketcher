@@ -7,22 +7,22 @@ Besides the well known zoom behaviour that is dependent on the mouse wheel, Canv
 `!` This package is WIP and stands as the basis of my Bachelor Thesis.
 # Installing
 
-Soon to be published on NPM. See [npm documentation](https://docs.npmjs.com/) on how to get started with npm.
+Install the package using the npm CLI, by running `npm i @iuliailies/canva-sketcher`. See [npm documentation](https://docs.npmjs.com/) on how to get started with npm.
 
 # API Reference
 
-- [x] DOM Selection
-  - [x] select & selectAll
-  - [x] Class methods
-- [x] DOM Insertion & Data Binding
-  - [x] SketcherHTMLElement
-  - [x] sketch
-- [x] Function Values & Parameter Accesibility
-- [x] Dragging
-- [x] Zooming
-  - [x] Standard Zoom
-  - [x] Focused Zoom
-- [x] PopUp
+- [x] [DOM Selection](https://github.com/iuliailies/canvaSketcher#dom-selection)
+  - [x] [select & selectAll](https://github.com/iuliailies/canvaSketcher#select--selectall)
+  - [x] [Class methods](https://github.com/iuliailies/canvaSketcher#class-methods)
+- [x] [DOM Insertion & Data Binding](https://github.com/iuliailies/canvaSketcher#dom-insertion--data-binding)
+  - [x] [SketcherHTMLElement](https://github.com/iuliailies/canvaSketcher#sketcherhtmlelement)
+  - [x] [sketch](https://github.com/iuliailies/canvaSketcher#sketch)
+- [x] [Function Values & Parameter Accesibility](https://github.com/iuliailies/canvaSketcher#function-values--parameter-accesibility)
+- [x] [Dragging](https://github.com/iuliailies/canvaSketcher#dragging)
+- [x] [Zooming](https://github.com/iuliailies/canvaSketcher#zooming)
+  - [x] [Standard Zoom](https://github.com/iuliailies/canvaSketcher#standard-zoom)
+  - [x] [Focused Zoom](https://github.com/iuliailies/canvaSketcher#focused-zoom)
+- [x] [PopUp](https://github.com/iuliailies/canvaSketcher#popup)
 - [ ] Panning
 - [ ] Force simulation
 

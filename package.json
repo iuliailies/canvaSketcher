@@ -1,7 +1,7 @@
 {
-  "name": "@iuliailies/graph-visualization",
-  "version": "1.0.0",
-  "description": "",
+  "name": "@iuliailies/canva-sketcher",
+  "version": "1.0.1",
+  "description": "Data-Visualization package, focused on DOM manipulation, dragging and zooming",
   "exports": {
     ".": {
       "import": {
@@ -30,13 +30,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/iuliailies/GraphVisualization.git"
+    "url": "git+https://github.com/iuliailies/canvaSketcher"
   },
-  "keywords": [],
+  "keywords": [
+    "data-visualization",
+    "DOM",
+    "drag",
+    "zoom",
+    "presentation"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/iuliailies/GraphVisualization/issues"
+    "url": "https://github.com/iuliailies/canvaSketcher/issues"
   },
-  "homepage": "https://github.com/iuliailies/GraphVisualization#readme"
+  "homepage": "https://github.com/iuliailies/canvaSketcher#readme"
 }
