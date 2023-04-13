@@ -16,7 +16,7 @@ export interface AnimatedOptions {
   transitionCurve?: "linear" | "ease" | "ease-in" | "ease-out" | "ease-in-out";
 }
 
-export interface TransformValues extends Point {
+export interface TransformValue extends Point {
   zoom: number;
 }
 
@@ -25,7 +25,7 @@ export class Animated {
 
   constructor(
     public element: SketcherHTMLElement,
-    public prevTransformValues?: TransformValues,
+    public prevTransformValues?: TransformValue,
     public options?: AnimatedOptions
   ) {}
 

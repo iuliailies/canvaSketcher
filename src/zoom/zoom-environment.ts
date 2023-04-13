@@ -4,7 +4,7 @@ import { SketcherHTMLElement } from "../models/sketcher-html-element";
 import { select } from "../selection/select";
 import { Selection } from "../selection/selection";
 import { isShortcutPressed } from "../showcase/helpers";
-import { getElementFocusZoom } from "./helpers";
+import { getElement2DTransform, getElementFocusZoom } from "./helpers";
 import {
   ZoomState,
   ZoomOptions,
@@ -27,11 +27,6 @@ export class ZoomEnvironment {
   targets: HTMLElement[] = [];
   currentTarget?: HTMLElement;
   focusedQueue: Animated[] = [];
-
-  zoomableTransformCoordinates = {
-    x: 0,
-    y: 0,
-  };
 
   constructor(
     private zoomableContainer: HTMLElement,
@@ -108,14 +103,12 @@ export class ZoomEnvironment {
       alt?: boolean;
     }
   ): Animated {
-    const prevZoom = +(
-      this.zoomable.getBoundingClientRect().width / this.zoomable.offsetWidth
-    ).toFixed(1);
+    const prevTransformValue = getElement2DTransform(this.zoomable);
 
     const zoom = getElementFocusZoom(
       this.zoomableContainer,
       target,
-      prevZoom,
+      prevTransformValue.zoom,
       options.boundary || 0
     );
 
@@ -127,11 +120,11 @@ export class ZoomEnvironment {
       x:
         containerRect.left +
         ((targetRect.left - containerRect.left + targetRect.width / 2) * zoom) /
-          prevZoom,
+          prevTransformValue.zoom,
       y:
         containerRect.top +
         ((targetRect.top - containerRect.top + targetRect.height / 2) * zoom) /
-          prevZoom,
+          prevTransformValue.zoom,
     };
 
     // center point coordinate of the zoomable container; independent of the zoom value
@@ -140,29 +133,19 @@ export class ZoomEnvironment {
       y: containerRect.top + containerRect.height / 2,
     };
 
-    const focused = new Animated(
-      target,
-      {
-        x: this.zoomableTransformCoordinates.x,
-        y: this.zoomableTransformCoordinates.y,
-        zoom: prevZoom,
-      },
-      options
-    );
+    const focused = new Animated(target, prevTransformValue, options);
 
     this.focusedQueue?.push(focused);
-
-    // adjust translation coordinates to new zoom
-    this.zoomableTransformCoordinates = {
-      x: (this.zoomableTransformCoordinates.x * zoom) / prevZoom,
-      y: (this.zoomableTransformCoordinates.y * zoom) / prevZoom,
-    };
 
     focused.handleCallbacks("open");
 
     this.transformCanvas(
-      this.zoomableTransformCoordinates.x + containerCenter.x - targetCenter.x,
-      this.zoomableTransformCoordinates.y + containerCenter.y - targetCenter.y,
+      (prevTransformValue.x * zoom) / prevTransformValue.zoom +
+        containerCenter.x -
+        targetCenter.x,
+      (prevTransformValue.y * zoom) / prevTransformValue.zoom +
+        containerCenter.y -
+        targetCenter.y,
       zoom,
       options
     );
@@ -339,19 +322,15 @@ export class ZoomEnvironment {
     zoom: number,
     options?: TargetOptions
   ): void {
-    this.zoomableTransformCoordinates = {
-      x: left,
-      y: top,
-    };
-    this.zoomable.style.transform = `translate(${left}px, ${top}px) scale(${zoom}) `;
+    this.zoomable.style.transform = `translateX(${left}px) translateY(${top}px) scale(${zoom}) `;
     if (!options) {
       this.zoomable.style.removeProperty("transition");
       return;
     }
     this.zoomable.style.transition = `transform ${
-      options.transitionDuration + "s" || "0s"
-    } ${options.transitionCurve || ""} ${
-      options.transitionDelay + "s" || "0s"
+      options.transitionDuration ? options.transitionDuration + "s" : "0s"
+    } ${options.transitionCurve || "linear"} ${
+      options.transitionDelay ? options.transitionDelay + "s" : "0s"
     }`;
   }
 }

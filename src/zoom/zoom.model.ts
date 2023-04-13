@@ -2,12 +2,6 @@ import { AnimatedOptions } from "../models/animated";
 
 export type ZoomState = "zoom";
 
-export interface TransformValue {
-  left: number;
-  top: number;
-  zoom: number;
-}
-
 export interface ZoomOptions {
   // how much the zoom value should be incremented/decremented inside one callback;
   step?: number;
