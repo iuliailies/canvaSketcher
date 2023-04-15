@@ -2,9 +2,9 @@
 
 CanvaSketcher is a Typescript library used for visualizing data in an interactive and responsive way. By the means of DOM manipulation, any object from an array can be associated to an HTML element, injected into a web page and customized. The newly injected elements can be interacted with via mouse events, allowing functionalities such as dragging and zooming.
 
-Besides the well known zoom behaviour that is dependent on the mouse wheel, CanvaSketcher treats zoom in a way that can be associated to what users know as PowerPoint presentation style. An element can be "popped-out" by enhancing it towards the center of the screen, or "spotlighted" by zooming the wrapper HTML node until the element gets centered and in focus.
+Besides the well known zoom behaviour that is mouse-wheel or keyboard dependent, CanvaSketcher treats zoom in a way that can be associated to what users know as PowerPoint presentation style. An element can be "popped-out" by enhancing it towards the center of the screen, or "focused" by translating and scaling its wrapper HTML node until the target element gets centered and in focus.
 
-`!` This package is WIP and stands as the basis of my Bachelor Thesis.
+`!` This package stands at the basis of my Bachelor Thesis.
 # Installing
 
 Install the package using the npm CLI, by running `npm i @iuliailies/canva-sketcher`. See [npm documentation](https://docs.npmjs.com/) on how to get started with npm.
@@ -45,7 +45,7 @@ A `Selection` allows perfoming multiple core functions on each element of it, wi
 
 In the example below, we add to all elements of class "parent" a div of class "child". To each new element of our Selection, we add a certain text and height.
 ```
-import * as canvaSketcher from '@iuliailies/graph-visualization-1.0.0.tgz';
+import * as canvaSketcher from '@iuliailies/canva-sketcher';
 
 canvaSketcher.selectAll(".parent")
     .append("div")
