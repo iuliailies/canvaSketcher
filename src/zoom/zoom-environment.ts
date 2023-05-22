@@ -30,7 +30,8 @@ export class ZoomEnvironment {
 
   constructor(
     private zoomableContainer: HTMLElement,
-    private zoomable: HTMLElement
+    private zoomable: HTMLElement,
+    private focusLimit?: number
   ) {}
 
   public apply(options: ZoomOptions = defaultZoomOptions): ZoomEnvironment {
@@ -103,6 +104,13 @@ export class ZoomEnvironment {
       alt?: boolean;
     }
   ): Animated {
+    if (
+      this.focusLimit !== undefined &&
+      this.focusLimit <= this.focusedStack.length
+    ) {
+      return new Animated(target);
+    }
+
     const prevTransformValue = getElement2DTransform(this.zoomable);
 
     const zoom = getElementFocusZoom(
@@ -290,26 +298,20 @@ export class ZoomEnvironment {
           : centerPoint.y) - document.documentElement.scrollTop,
     };
 
-    // avoid slight center deviation by approximating with 2 fixed decimals
-    let xPercent = +(
-      (zoomCenter.x - zoomableRect.left) /
-      zoomableRect.width
-    ).toFixed(2);
-    let yPercent = +(
-      (zoomCenter.y - zoomableRect.top) /
-      zoomableRect.height
-    ).toFixed(2);
-
     const translation: Point = {
       x: Math.round(
         zoomCenter.x -
           zoomableContainerRect.left -
-          xPercent * ((zoomableRect.width * zoom) / prevZoom)
+          (zoomableContainerRect.width - this.zoomableContainer.clientWidth) /
+            2 - // get border
+          +(zoomCenter.x - zoomableRect.left) * (zoom / prevZoom)
       ),
       y: Math.round(
         zoomCenter.y -
           zoomableContainerRect.top -
-          yPercent * ((zoomableRect.height * zoom) / prevZoom)
+          (zoomableContainerRect.height - this.zoomableContainer.clientHeight) /
+            2 - // get border
+          +(zoomCenter.y - zoomableRect.top) * (zoom / prevZoom)
       ),
     };
 

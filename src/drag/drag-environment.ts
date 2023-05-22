@@ -32,6 +32,8 @@ export class DragEnvironment {
     DragState,
     (this: SketcherHTMLElement, eventObj: Event, data: any) => any
   >();
+  disabled = false;
+
   constructor() {}
 
   public apply(selection: Selection, options?: DragOptions): DragEnvironment {
@@ -74,6 +76,10 @@ export class DragEnvironment {
     options: DragOptions,
     ev: MouseEvent
   ): void {
+    if (this.disabled) {
+      return;
+    }
+
     ev.preventDefault();
     ev.stopImmediatePropagation();
 
