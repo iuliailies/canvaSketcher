@@ -7,16 +7,20 @@ import { DragEnvironment } from "./drag/drag-environment";
 import { ZoomEnvironment } from "./zoom/zoom-environment";
 import { zoom } from "./zoom/zoom";
 import { popup } from "./pop-up/pop-up";
+import { PanEnvironment } from "./pan/pan-environment";
+import { pan } from "./pan/pan";
 
 export {
   SketcherHTMLElement,
   Selection,
   DragEnvironment,
   ZoomEnvironment,
+  PanEnvironment,
   select,
   selectAll,
   sketch,
   popup,
   drag,
   zoom,
+  pan,
 };

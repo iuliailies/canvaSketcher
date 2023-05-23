@@ -12,6 +12,8 @@ import {
   defaultZoomOptions,
   defaultTargetOptions,
 } from "./zoom.model";
+import { pan } from "../pan/pan";
+import { PanEnvironment } from "../pan/pan-environment";
 
 export class ZoomEnvironment {
   outsideFunctionBindings = new Map<
@@ -76,6 +78,10 @@ export class ZoomEnvironment {
       });
     }
     return this;
+  }
+
+  public pannable(): PanEnvironment {
+    return pan(this.zoomableContainer, this.zoomable).apply();
   }
 
   public targetable(selection: Selection): ZoomEnvironment {
