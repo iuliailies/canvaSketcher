@@ -30,13 +30,19 @@ export type MouseState = "mousedown" | "mousemove" | "mouseup";
 export class DragEnvironment {
   outsideFunctionBindings = new Map<
     DragState,
-    (this: SketcherHTMLElement, eventObj: Event, data: any) => any
+    (
+      this: SketcherHTMLElement,
+      eventObj: Event,
+      data: any,
+      index: number
+    ) => any
   >();
   disabled = false;
 
   constructor() {}
 
   public apply(selection: Selection, options?: DragOptions): DragEnvironment {
+    let pointer = 0;
     selection?.elements.forEach((elems) => {
       elems.forEach((elem) => {
         let dragInstance: DragInstance = {
@@ -54,9 +60,11 @@ export class DragEnvironment {
           this,
           elem,
           dragInstance,
-          options || {}
+          options || {},
+          pointer
         );
         elem.addEventListener("mousedown", downFunctionBinding);
+        pointer++;
       });
     });
     return this;
@@ -64,7 +72,12 @@ export class DragEnvironment {
 
   public on(
     state: DragState,
-    action: (this: SketcherHTMLElement, eventObj: Event, data: any) => any
+    action: (
+      this: SketcherHTMLElement,
+      eventObj: Event,
+      data: any,
+      index: number
+    ) => any
   ): DragEnvironment {
     this.outsideFunctionBindings.set(state, action);
     return this;
@@ -74,6 +87,7 @@ export class DragEnvironment {
     elem: SketcherHTMLElement,
     dragInstance: DragInstance,
     options: DragOptions,
+    index: number,
     ev: MouseEvent
   ): void {
     if (this.disabled) {
@@ -97,7 +111,8 @@ export class DragEnvironment {
       this,
       elem,
       dragInstance,
-      options
+      options,
+      index
     );
     dragInstance.moveFunctionBinding = moveFunctionBinding;
 
@@ -105,7 +120,8 @@ export class DragEnvironment {
       this,
       elem,
       dragInstance,
-      options
+      options,
+      index
     );
     dragInstance.upFunctionBinding = upFunctionBinding;
 
@@ -117,6 +133,7 @@ export class DragEnvironment {
     elem: SketcherHTMLElement,
     dragInstance: DragInstance,
     options: DragOptions,
+    index: number,
     ev: MouseEvent
   ): void {
     ev.preventDefault();
@@ -142,7 +159,9 @@ export class DragEnvironment {
       dragInstance.dragging = true;
 
       // call user defined function
-      this.outsideFunctionBindings.get("start")?.apply(elem, [ev, elem.data]);
+      this.outsideFunctionBindings
+        .get("start")
+        ?.apply(elem, [ev, elem.data, index]);
 
       if (options.disableEvents) {
         elem.style.pointerEvents = "none";
@@ -166,13 +185,16 @@ export class DragEnvironment {
     document.getSelection()?.removeAllRanges();
 
     // call user defined function
-    this.outsideFunctionBindings.get("drag")?.apply(elem, [ev, elem.data]);
+    this.outsideFunctionBindings
+      .get("drag")
+      ?.apply(elem, [ev, elem.data, index]);
   }
 
   private handleMouseUp(
     elem: SketcherHTMLElement,
     dragInstance: DragInstance,
     options: DragOptions,
+    index: number,
     ev: MouseEvent
   ): void {
     ev.preventDefault();
@@ -190,9 +212,12 @@ export class DragEnvironment {
     document.removeEventListener("mouseup", dragInstance.upFunctionBinding);
     dragInstance.moveFunctionBinding = undefined;
     dragInstance.upFunctionBinding = undefined;
+    if (dragInstance.dragging) {
+      // call user defined function
+      this.outsideFunctionBindings
+        .get("end")
+        ?.apply(elem, [ev, elem.data, index]);
+    }
     dragInstance.dragging = false;
-
-    // call user defined function
-    this.outsideFunctionBindings.get("end")?.apply(elem, [ev, elem.data]);
   }
 }

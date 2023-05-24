@@ -1,6 +1,6 @@
 {
   "name": "@iuliailies/canva-sketcher",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Data-Visualization package, focused on DOM manipulation, dragging and zooming",
   "exports": {
     ".": {
