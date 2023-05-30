@@ -136,13 +136,20 @@ export class Selection {
 
   public on(
     eventType: keyof HTMLElementEventMap,
-    action: (this: SketcherHTMLElement, eventObj: Event, data: any) => any
+    action: (
+      this: SketcherHTMLElement,
+      eventObj: Event,
+      data: any,
+      i: number
+    ) => any
   ): Selection {
+    let pointer = 0;
     this.elements.forEach((nestedElements) => {
       nestedElements.forEach((elem) => {
-        const listener = contextListener.apply(elem, [action]);
+        const listener = contextListener.apply(elem, [action, pointer]);
         elem.removeEventListener(eventType, listener);
         elem.addEventListener(eventType, listener);
+        pointer++;
       });
     });
     return this;

@@ -29,6 +29,7 @@ export class ZoomEnvironment {
   targets: HTMLElement[] = [];
   currentTarget?: HTMLElement;
   focusedStack: Animated[] = [];
+  zoom: number = 1;
 
   constructor(
     private zoomableContainer: HTMLElement,
@@ -37,7 +38,7 @@ export class ZoomEnvironment {
   ) {}
 
   public apply(options: ZoomOptions = defaultZoomOptions): ZoomEnvironment {
-    let zoom = +(
+    this.zoom = +(
       this.zoomable.getBoundingClientRect().width / this.zoomable.offsetWidth
     ).toFixed(1);
 
@@ -51,13 +52,7 @@ export class ZoomEnvironment {
         ) {
           const direction = event.deltaY < 0 ? -1 : 1;
           const mousePosition = { x: event.pageX, y: event.pageY };
-          zoom = this.zoomCallback(
-            zoom,
-            direction,
-            options,
-            event,
-            mousePosition
-          );
+          this.zoomCallback(direction, options, event, mousePosition);
         }
       });
     } else {
@@ -72,7 +67,7 @@ export class ZoomEnvironment {
             ? 1
             : undefined;
           if (direction) {
-            zoom = this.zoomCallback(zoom, direction, options, event);
+            this.zoomCallback(direction, options, event);
           }
         }
       });
@@ -198,6 +193,12 @@ export class ZoomEnvironment {
     return this;
   }
 
+  public reset(): ZoomEnvironment {
+    this.zoomable.style.transform = `translateX(0px) translateY(0px) scale(1) `;
+    this.zoom = 1;
+    return this;
+  }
+
   private handleExitCalls(
     focused: Animated,
     exitable?: HTMLElement,
@@ -230,38 +231,38 @@ export class ZoomEnvironment {
   }
 
   private zoomCallback(
-    zoom: number,
     direction: -1 | 1,
     options: ZoomOptions,
     event: Event,
     mousePosition?: Point
-  ): number {
+  ): void {
     if (this.focusedStack?.length) {
-      return zoom;
+      return;
     }
     const step = options.step !== undefined ? options.step : 0.1;
-    const prevZoom = zoom;
+    const prevZoom = this.zoom;
 
-    zoom += direction > 0 ? -step : step;
+    this.zoom += direction > 0 ? -step : step;
     if (
-      (options.upperBound && zoom >= options.upperBound) ||
-      (options.lowerBound && zoom <= options.lowerBound)
+      (options.upperBound && this.zoom >= options.upperBound) ||
+      (options.lowerBound && this.zoom <= options.lowerBound)
     ) {
       // call user defined function
       this.outsideFunctionBindings
         .get("zoom")
-        ?.apply(this.zoomable, [event, zoom, this.currentTarget]);
-      return prevZoom;
+        ?.apply(this.zoomable, [event, this.zoom, this.currentTarget]);
+      this.zoom = prevZoom;
+      return;
     }
 
-    this.handleZoom(zoom, prevZoom, mousePosition);
+    this.handleZoom(this.zoom, prevZoom, mousePosition);
 
     // call user defined function
     this.outsideFunctionBindings
       .get("zoom")
-      ?.apply(this.zoomable, [event, zoom, this.currentTarget]);
+      ?.apply(this.zoomable, [event, this.zoom, this.currentTarget]);
 
-    return zoom;
+    return;
   }
 
   private handleZoom(

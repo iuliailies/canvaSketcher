@@ -83,7 +83,6 @@ export class PanEnvironment {
       "mouseleave",
       this.functionBindings.up
     );
-    document.getSelection()?.removeAllRanges();
 
     this.outsideFunctionBindings.get("end")?.apply(this.zoomable, [event]);
   }
@@ -98,6 +97,9 @@ export class PanEnvironment {
       this.zoomableStartCoords.y + dy,
       this.zoomableStartCoords.zoom
     );
+
+    // disable unwanted background selection caused by mouse movement
+    document.getSelection()?.removeAllRanges();
 
     this.outsideFunctionBindings.get("drag")?.apply(this.zoomable, [event]);
   }
